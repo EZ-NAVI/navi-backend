@@ -43,3 +43,8 @@ class UserService:
         # 프론트에서 넘긴 Firebase ID 토큰 검증
         uid = self.auth_service.verify_token(id_token)
         return self.repo.get(uid)
+
+    def get(self, user_id: str) -> Optional[User]:
+        if not self.repo:
+            return None
+        return self.repo.get(user_id)

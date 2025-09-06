@@ -13,7 +13,7 @@ class FirebaseUserRepository(UserRepository):
             raise RuntimeError("FIREBASE_CREDENTIALS env var not set")
         credentials = service_account.Credentials.from_service_account_file(cred_path)
         self.db = firestore.Client(credentials=credentials)
-        self.collection = self.db.collection("users")
+        self.collection = self.db.collection("user")
 
     def save(self, user: User) -> User:
         doc_ref = self.collection.document(user.user_id)
