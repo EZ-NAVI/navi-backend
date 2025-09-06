@@ -3,6 +3,7 @@ from typing import Optional
 from uuid import UUID
 from user.domain.user import User
 
+
 class UserRepository(ABC):
     @abstractmethod
     def get(self, user_id: str) -> Optional[User]:
