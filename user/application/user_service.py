@@ -48,3 +48,19 @@ class UserService:
         if not self.repo:
             return None
         return self.repo.get(user_id)
+
+    def has_matching(self, user_id: str) -> bool:
+        user = self.repo.get(user_id)
+        if not user:
+            return False
+
+        if user.user_type == "child":
+            # 자녀 → parent_id가 있으면 매칭된 것
+            return user.parent_id is not None
+
+        elif user.user_type == "parent":
+            # 부모 → 자신을 parent_id로 가진 자녀가 있는지 확인
+            children = self.repo.find_children_by_parent_id(user.user_id)
+            return len(children) > 0
+
+        return False

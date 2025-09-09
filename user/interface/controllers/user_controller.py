@@ -5,7 +5,6 @@ from user.application.user_service import UserService
 from containers import Container
 from typing import Optional
 
-# 추가
 from common.logger import logger
 from common.context_vars import user_context
 
@@ -74,5 +73,10 @@ def get_current_user(
         logger.warning(f"유저 정보 없음 uid={current.uid}")
         raise HTTPException(status_code=404, detail="User not found")
 
+    matched = service.has_matching(user.user_id)
+
     logger.info(f"현재 유저 정보 반환 uid={user.user_id}")
-    return user.__dict__
+    return {
+        **user.__dict__,
+        "matched": matched,  # 매칭 여부 추가
+    }

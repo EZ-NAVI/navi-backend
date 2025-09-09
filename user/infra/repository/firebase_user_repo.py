@@ -3,7 +3,7 @@ from google.cloud import firestore
 from google.oauth2 import service_account
 from user.domain.user import User
 from user.domain.repository.user_repo import UserRepository
-from typing import Optional
+from typing import Optional, List
 
 
 class FirebaseUserRepository(UserRepository):
@@ -63,3 +63,23 @@ class FirebaseUserRepository(UserRepository):
             created_at=data.get("createdAt"),
             updated_at=data.get("updatedAt"),
         )
+
+    def find_children_by_parent_id(self, parent_id: str) -> List[User]:
+        """특정 parent_id를 가진 자녀 유저들 조회"""
+        query = self.collection.where("parentId", "==", parent_id).stream()
+        users: List[User] = []
+        for doc in query:
+            data = doc.to_dict()
+            users.append(
+                User(
+                    user_id=data["userId"],
+                    user_type=data["userType"],
+                    name=data["name"],
+                    email=data["email"],
+                    parent_id=data.get("parentId"),
+                    birth_year=data.get("birthYear"),
+                    created_at=data.get("createdAt"),
+                    updated_at=data.get("updatedAt"),
+                )
+            )
+        return users
