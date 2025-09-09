@@ -21,6 +21,6 @@ class UserRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def find_children(self, parent_id: str) -> list[User]:
+    def find_children_by_parent_id(self, parent_id: str) -> list[User]:
         """parent_id로 자녀들 조회"""
         raise NotImplementedError
