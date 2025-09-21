@@ -8,6 +8,7 @@ class User:
     user_type: str  # "parent" | "child"
     name: str
     email: str
+    phone: str
     parent_id: str | None
     birth_year: int | None
     created_at: datetime | None

@@ -2,11 +2,11 @@ from datetime import datetime
 from typing import Optional
 from user.domain.user import User
 from user.domain.repository.user_repo import UserRepository
-from user.infra.auth.firebase_auth_service import FirebaseAuthService
+from user.domain.service.auth_service import AuthService
 
 
 class UserService:
-    def __init__(self, repo: UserRepository, auth_service: FirebaseAuthService):
+    def __init__(self, repo: UserRepository, auth_service: AuthService):
         self.repo = repo
         self.auth_service = auth_service
 
@@ -15,6 +15,7 @@ class UserService:
         user_type: str,
         name: str,
         email: str,
+        phone: str,
         password: str,
         parent_id: Optional[str] = None,
         birth_year: Optional[int] = None,
@@ -32,6 +33,7 @@ class UserService:
             user_type=user_type,
             name=name,
             email=email,
+            phone=phone,
             parent_id=parent_id,
             birth_year=birth_year,
             created_at=now,

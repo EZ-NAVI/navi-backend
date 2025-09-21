@@ -15,6 +15,7 @@ class UserRegisterRequest(BaseModel):
     user_type: str
     name: str
     email: EmailStr
+    phone: str
     password: str
     parent_id: Optional[str] = None
     birth_year: Optional[int] = None
@@ -35,6 +36,7 @@ def register_user(
         user_type=req.user_type,
         name=req.name,
         email=req.email,
+        phone=req.phone,
         password=req.password,
         parent_id=req.parent_id,
         birth_year=req.birth_year,

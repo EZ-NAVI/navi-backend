@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 API_KEY = os.getenv("FIREBASE_API_KEY")
-EMAIL = "back_test@test.com"  # 테스트 계정 이메일
-PASSWORD = "qwe123"  # 테스트 계정 비번
+EMAIL = os.getenv("TEST_EMAIL")
+PASSWORD = os.getenv("TEST_PASSWORD")
 
 
 def get_id_token():
