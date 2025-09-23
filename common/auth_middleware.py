@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from firebase_admin import auth
 from common.context_vars import user_context
+from common.models import CurrentUser
 
 
 class CurrentUser:
@@ -28,9 +29,9 @@ def create_middlewares(app: FastAPI):
                 )
                 user_context.set(current)
             except Exception:
-                user_context.set("Anonymous")
+                user_context.set(CurrentUser(uid="anonymous", email="", role=None))
         else:
-            user_context.set("Anonymous")
+            user_context.set(CurrentUser(uid="anonymous", email="", role=None))
 
         response = await call_next(request)
         return response

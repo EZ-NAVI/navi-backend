@@ -1,4 +1,6 @@
 from contextvars import ContextVar
+from common.models import CurrentUser
 
-# 요청 단위로 현재 사용자 보관
-user_context: ContextVar[str] = ContextVar("user_context", default="Anonymous")
+user_context: ContextVar[CurrentUser] = ContextVar(
+    "user_context", default=CurrentUser(uid="anonymous", email="", role=None)
+)
