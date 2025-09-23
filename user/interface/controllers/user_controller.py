@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 from dependency_injector.wiring import inject, Provide
 from user.application.user_service import UserService
+from user.domain.user import User
 from containers import Container
 from typing import Optional
 
@@ -25,7 +26,11 @@ class UserLoginRequest(BaseModel):
     id_token: str
 
 
-@router.post("/register")
+class UserResponse(User):
+    matched: bool
+
+
+@router.post("/register", response_model=User)
 @inject
 def register_user(
     req: UserRegisterRequest,
@@ -42,10 +47,10 @@ def register_user(
         birth_year=req.birth_year,
     )
     logger.info(f"회원가입 성공 uid={user.user_id}")
-    return user.__dict__
+    return user
 
 
-@router.post("/login")
+@router.post("/login", response_model=User)
 @inject
 def login_user(
     req: UserLoginRequest,
@@ -57,10 +62,10 @@ def login_user(
         logger.warning("로그인 실패")
         raise HTTPException(401, "Invalid credentials")
     logger.info(f"로그인 성공 uid={user.user_id}")
-    return user.__dict__
+    return user
 
 
-@router.get("/me")
+@router.get("/me", response_model=UserResponse)
 @inject
 def get_current_user(
     service: UserService = Depends(Provide[Container.user_service]),
@@ -78,7 +83,4 @@ def get_current_user(
     matched = service.has_matching(user.user_id)
 
     logger.info(f"현재 유저 정보 반환 uid={user.user_id}")
-    return {
-        **user.__dict__,
-        "matched": matched,  # 매칭 여부 추가
-    }
+    return UserResponse(**user.dict(by_alias=True), matched=matched)
