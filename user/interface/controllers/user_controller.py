@@ -66,7 +66,7 @@ def get_current_user(
     service: UserService = Depends(Provide[Container.user_service]),
 ):
     current = user_context.get()
-    if not current or current == "Anonymous":
+    if current.uid == "anonymous":
         logger.warning("인증되지 않은 요청 /me 접근")
         raise HTTPException(status_code=401, detail="Unauthorized")
 
