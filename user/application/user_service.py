@@ -2,11 +2,11 @@ from datetime import datetime
 from typing import Optional
 from user.domain.user import User
 from user.domain.repository.user_repo import UserRepository
-from user.infra.auth.firebase_auth_service import FirebaseAuthService
+from user.domain.service.auth_service import AuthService
 
 
 class UserService:
-    def __init__(self, repo: UserRepository, auth_service: FirebaseAuthService):
+    def __init__(self, repo: UserRepository, auth_service: AuthService):
         self.repo = repo
         self.auth_service = auth_service
 
@@ -15,6 +15,7 @@ class UserService:
         user_type: str,
         name: str,
         email: str,
+        phone: str,
         password: str,
         parent_id: Optional[str] = None,
         birth_year: Optional[int] = None,
@@ -32,6 +33,7 @@ class UserService:
             user_type=user_type,
             name=name,
             email=email,
+            phone=phone,
             parent_id=parent_id,
             birth_year=birth_year,
             created_at=now,
@@ -48,3 +50,19 @@ class UserService:
         if not self.repo:
             return None
         return self.repo.get(user_id)
+
+    def has_matching(self, user_id: str) -> bool:
+        user = self.repo.get(user_id)
+        if not user:
+            return False
+
+        if user.user_type == "child":
+            # 자녀 → parent_id가 있으면 매칭된 것
+            return user.parent_id is not None
+
+        elif user.user_type == "parent":
+            # 부모 → 자신을 parent_id로 가진 자녀가 있는지 확인
+            children = self.repo.find_children_by_parent_id(user.user_id)
+            return len(children) > 0
+
+        return False

@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 from dependency_injector.wiring import inject, Provide
 from user.application.user_service import UserService
+from user.domain.user import User
 from containers import Container
 from typing import Optional
 
-# 추가
 from common.logger import logger
 from common.context_vars import user_context
 
@@ -16,6 +16,7 @@ class UserRegisterRequest(BaseModel):
     user_type: str
     name: str
     email: EmailStr
+    phone: str
     password: str
     parent_id: Optional[str] = None
     birth_year: Optional[int] = None
@@ -25,7 +26,11 @@ class UserLoginRequest(BaseModel):
     id_token: str
 
 
-@router.post("/register")
+class UserResponse(User):
+    matched: bool
+
+
+@router.post("/register", response_model=User)
 @inject
 def register_user(
     req: UserRegisterRequest,
@@ -36,15 +41,16 @@ def register_user(
         user_type=req.user_type,
         name=req.name,
         email=req.email,
+        phone=req.phone,
         password=req.password,
         parent_id=req.parent_id,
         birth_year=req.birth_year,
     )
     logger.info(f"회원가입 성공 uid={user.user_id}")
-    return user.__dict__
+    return user
 
 
-@router.post("/login")
+@router.post("/login", response_model=User)
 @inject
 def login_user(
     req: UserLoginRequest,
@@ -56,16 +62,16 @@ def login_user(
         logger.warning("로그인 실패")
         raise HTTPException(401, "Invalid credentials")
     logger.info(f"로그인 성공 uid={user.user_id}")
-    return user.__dict__
+    return user
 
 
-@router.get("/me")
+@router.get("/me", response_model=UserResponse)
 @inject
 def get_current_user(
     service: UserService = Depends(Provide[Container.user_service]),
 ):
     current = user_context.get()
-    if not current or current == "Anonymous":
+    if current.uid == "anonymous":
         logger.warning("인증되지 않은 요청 /me 접근")
         raise HTTPException(status_code=401, detail="Unauthorized")
 
@@ -74,5 +80,7 @@ def get_current_user(
         logger.warning(f"유저 정보 없음 uid={current.uid}")
         raise HTTPException(status_code=404, detail="User not found")
 
+    matched = service.has_matching(user.user_id)
+
     logger.info(f"현재 유저 정보 반환 uid={user.user_id}")
-    return user.__dict__
+    return UserResponse(**user.dict(by_alias=True), matched=matched)

@@ -3,7 +3,7 @@ from google.cloud import firestore
 from google.oauth2 import service_account
 from user.domain.user import User
 from user.domain.repository.user_repo import UserRepository
-from typing import Optional
+from typing import Optional, List
 
 
 class FirebaseUserRepository(UserRepository):
@@ -17,49 +17,29 @@ class FirebaseUserRepository(UserRepository):
 
     def save(self, user: User) -> User:
         doc_ref = self.collection.document(user.user_id)
-        doc_ref.set(
-            {
-                "userId": user.user_id,
-                "userType": user.user_type,
-                "name": user.name,
-                "email": user.email,
-                "parentId": user.parent_id,
-                "birthYear": user.birth_year,
-                "createdAt": firestore.SERVER_TIMESTAMP,
-                "updatedAt": firestore.SERVER_TIMESTAMP,
-            },
-            merge=True,
-        )
+
+        # camelCase alias 사용해서 저장
+        doc_ref.set(user.dict(by_alias=True), merge=True)
         return user
 
     def get(self, user_id: str) -> Optional[User]:
         doc = self.collection.document(user_id).get()
         if not doc.exists:
             return None
-        data = doc.to_dict()
-        return User(
-            user_id=data["userId"],
-            user_type=data["userType"],
-            name=data["name"],
-            email=data["email"],
-            parent_id=data.get("parentId"),
-            birth_year=data.get("birthYear"),
-            created_at=data.get("createdAt"),
-            updated_at=data.get("updatedAt"),
-        )
+
+        # Firestore → dict(camelCase) → Pydantic 모델이 알아서 snake_case 필드에 매핑
+        return User(**doc.to_dict())
 
     def find_by_email(self, email: str) -> Optional[User]:
         query = self.collection.where("email", "==", email).limit(1).get()
         if not query:
             return None
-        data = query[0].to_dict()
-        return User(
-            user_id=data["userId"],
-            user_type=data["userType"],
-            name=data["name"],
-            email=data["email"],
-            parent_id=data.get("parentId"),
-            birth_year=data.get("birthYear"),
-            created_at=data.get("createdAt"),
-            updated_at=data.get("updatedAt"),
-        )
+        return User(**query[0].to_dict())
+
+    def find_children_by_parent_id(self, parent_id: str) -> List[User]:
+        """특정 parent_id를 가진 자녀 유저들 조회"""
+        query = self.collection.where("parentId", "==", parent_id).stream()
+        users: List[User] = []
+        for doc in query:
+            users.append(User(**doc.to_dict()))
+        return users
