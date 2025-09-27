@@ -1,26 +1,21 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 from datetime import datetime
-
-
-# snake_case → camelCase 변환 함수
-def to_camel(string: str) -> str:
-    parts = string.split("_")
-    return parts[0] + "".join(word.capitalize() for word in parts[1:])
+from typing import Optional
 
 
 class User(BaseModel):
-    user_id: str
-    user_type: str  # "parent" | "child"
+    user_id: str = Field(..., alias="userId")
+    user_type: str = Field(..., alias="userType")
     name: str
     email: str
     phone: str
-    parent_id: str | None
-    birth_year: int | None
-    created_at: datetime | None
-    updated_at: datetime | None
-    password: str | None = None  # 사실상 안 쓰지만 Auth 동기화용
+    parent_id: Optional[str] = Field(None, alias="parentId")
+    birth_year: Optional[int] = Field(None, alias="birthYear")
+    created_at: Optional[datetime] = Field(None, alias="createdAt")
+    updated_at: Optional[datetime] = Field(None, alias="updatedAt")
+    password: Optional[str] = None
 
-    class Config:
-        alias_generator = to_camel
-        allow_population_by_field_name = True
-        orm_mode = True
+    model_config = ConfigDict(
+        populate_by_name=True,  # snake_case로도 값 넣을 수 있음
+        from_attributes=True,
+    )

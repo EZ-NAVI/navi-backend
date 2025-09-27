@@ -2,10 +2,8 @@ from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from containers import Container
 from user.interface.controllers.user_controller import router as user_router
-from common.auth_middleware import create_middlewares
 
 app = FastAPI(title="NAVI Backend", version="0.1.0")
-create_middlewares(app)
 
 container = Container()
 container.wire(modules=["user.interface.controllers.user_controller"])
@@ -36,7 +34,12 @@ def custom_openapi():
             "bearerFormat": "JWT",
         }
     }
-    openapi_schema["security"] = [{"BearerAuth": []}]  # 전체 엔드포인트 적용
+    openapi_schema["security"] = [{"BearerAuth": []}]
+
+    for path in ["/users/register", "/users/login"]:
+        if "post" in openapi_schema["paths"][path]:
+            openapi_schema["paths"][path]["post"]["security"] = []
+
     app.openapi_schema = openapi_schema
     return app.openapi_schema
 

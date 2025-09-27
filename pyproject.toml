@@ -15,7 +15,12 @@ dependencies = [
     "pydantic[email] (>=2.11.7,<3.0.0)",
     "google-cloud-firestore (>=2.21.0,<3.0.0)",
     "python-dotenv (>=1.1.1,<2.0.0)",
-    "firebase-admin (>=7.1.0,<8.0.0)"
+    "firebase-admin (>=7.1.0,<8.0.0)",
+    "ulid-py (>=1.1.0,<2.0.0)",
+    "passlib[bcrypt] (>=1.7.4,<2.0.0)",
+    "sqlalchemy (>=2.0.43,<3.0.0)",
+    "psycopg2-binary (>=2.9.10,<3.0.0)",
+    "python-multipart (>=0.0.20,<0.0.21)"
 ]
 
 
