@@ -1,12 +1,14 @@
-import os
 from datetime import datetime, timedelta
 from enum import StrEnum
 from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 import jwt
+from config import get_settings
 
-SECRET_KEY = os.getenv("JWT_SECRET", "dev-secret")
+settings = get_settings()
+
+SECRET_KEY = settings.jwt_secret
 ALGORITHM = "HS256"
 
 

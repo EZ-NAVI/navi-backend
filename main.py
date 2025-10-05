@@ -7,6 +7,7 @@ from report.interface.controllers.report_controller import router as report_rout
 
 app = FastAPI(title="NAVI Backend", version="0.1.0")
 
+
 container = Container()
 container.wire(
     modules=[
