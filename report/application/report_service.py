@@ -44,6 +44,8 @@ class ReportService:
             reporter_type=reporter_type,
             location_lat=location_lat,
             location_lng=location_lng,
+            # cluster_id: 아직 클러스터링 미적용 → None으로 초기화
+            cluster_id=None,
             image_url=image_url,
             category=category,
             description=description,

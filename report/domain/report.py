@@ -12,6 +12,8 @@ class Report(BaseModel):
     location_lat: Optional[float] = Field(None, alias="locationLat")
     location_lng: Optional[float] = Field(None, alias="locationLng")
 
+    cluster_id: Optional[str] = Field(None, alias="clusterId")
+
     image_url: Optional[str] = Field(None, alias="imageUrl")
     category: Optional[str] = None
     description: Optional[str] = None

@@ -7,7 +7,22 @@ from database import SessionLocal
 class PostgresReportRepository(ReportRepository):
     def save(self, report: ReportVO) -> ReportVO:
         with SessionLocal() as db:
-            db_report = ReportDB(**report.dict(by_alias=True))
+            db_report = ReportDB(
+                report_id=report.report_id,
+                reporter_id=report.reporter_id,
+                reporter_type=report.reporter_type,
+                location_lat=report.location_lat,
+                location_lng=report.location_lng,
+                cluster_id=report.cluster_id,
+                image_url=report.image_url,
+                category=report.category,
+                description=report.description,
+                status=report.status,
+                score=report.score,
+                not_there=report.not_there,
+                created_at=report.created_at,
+                updated_at=report.updated_at,
+            )
             db.add(db_report)
             db.commit()
             db.refresh(db_report)
