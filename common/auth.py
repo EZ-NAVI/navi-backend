@@ -17,7 +17,7 @@ class Role(StrEnum):
 
 def create_access_token(
     payload: dict,
-    role: Role,
+    role=Role.USER,
     expires_delta: timedelta = timedelta(
         hours=6
     ),  # expires_delta: timedelta = timedelta(hours=6) ← 기본 만료시간이 6시간으로 설정
@@ -46,21 +46,23 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
 
 
 class CurrentUser:
-    def __init__(self, id: str, role: Role):
+    def __init__(self, id: str, role: Role, user_type: str | None = None):
         self.id = id
         self.role = role
+        self.user_type = user_type
 
     def __str__(self):
-        return f"{self.id}({self.role})"
+        return f"{self.id}({self.role}, type={self.user_type})"
 
 
 def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     payload = decode_access_token(token)
     user_id = payload.get("user_id")
     role = payload.get("role")
+    user_type = payload.get("user_type")
     if not user_id or not role or role != Role.USER:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-    return CurrentUser(user_id, Role(role))
+    return CurrentUser(user_id, Role(role), user_type)
 
 
 def get_admin_user(token: Annotated[str, Depends(oauth2_scheme)]):

@@ -5,6 +5,3 @@ __pycache__
 # Environments
 *.json
 .env
-
-# Firebase service account key
-secrets/

@@ -56,7 +56,10 @@ class UserService:
             )
 
         # JWT 발급
-        return create_access_token(payload={"user_id": user.user_id}, role=Role.USER)
+        return create_access_token(
+            payload={"user_id": user.user_id, "user_type": user.user_type},
+            role=Role.USER,
+        )
 
     def get(self, user_id: str) -> Optional[User]:
         return self.repo.get(user_id)
