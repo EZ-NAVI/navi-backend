@@ -1,14 +1,17 @@
+from fastapi import HTTPException, status
 from datetime import datetime
 import ulid
 from typing import List
 
+from user.domain.repository.user_repo import UserRepository
 from report.domain.report import Report
 from report.domain.repository.report_repo import ReportRepository
 
 
 class ReportService:
-    def __init__(self, repo: ReportRepository):
+    def __init__(self, repo: ReportRepository, user_repo: UserRepository):
         self.repo = repo
+        self.user_repo = user_repo
 
     def create_report(
         self,
@@ -20,6 +23,19 @@ class ReportService:
         category: str | None = None,
         description: str | None = None,
     ) -> Report:
+
+        user = self.user_repo.get(reporter_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # 보호자 매칭 검증
+        if user.user_type == "child" and not user.parent_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="보호자 연결이 필요한 계정입니다.",
+            )
+
+        # 제보 객체 생성
         now = datetime.utcnow()
 
         report = Report(
