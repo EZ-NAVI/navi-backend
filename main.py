@@ -1,12 +1,19 @@
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from containers import Container
+
 from user.interface.controllers.user_controller import router as user_router
+from report.interface.controllers.report_controller import router as report_router
 
 app = FastAPI(title="NAVI Backend", version="0.1.0")
 
 container = Container()
-container.wire(modules=["user.interface.controllers.user_controller"])
+container.wire(
+    modules=[
+        "user.interface.controllers.user_controller",
+        "report.interface.controllers.report_controller",
+    ]
+)
 
 
 @app.get("/")
@@ -16,6 +23,7 @@ def health():
 
 # 유저 관련 API 라우터 등록
 app.include_router(user_router)
+app.include_router(report_router)
 
 
 # Swagger에 BearerAuth 추가
