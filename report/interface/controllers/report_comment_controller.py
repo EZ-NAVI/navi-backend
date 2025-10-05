@@ -9,7 +9,11 @@ from common.auth import get_current_user, CurrentUser
 from common.logger import logger
 
 
-router = APIRouter(prefix="/reports/{report_id}/comments", tags=["report-comments"])
+router = APIRouter(
+    prefix="/reports/{report_id}/comments",
+    tags=["report-comments"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 class CommentCreateRequest(BaseModel):
