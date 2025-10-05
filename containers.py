@@ -3,6 +3,10 @@ from user.application.user_service import UserService
 from user.infra.repository.postgres_user_repo import PostgresUserRepository
 from report.application.report_service import ReportService
 from report.infra.repository.postgres_report_repo import PostgresReportRepository
+from report.application.report_comment_service import ReportCommentService
+from report.infra.repository.postgres_report_comment_repo import (
+    PostgresReportCommentRepository,
+)
 from utils.crypto import Crypto
 
 
@@ -11,11 +15,14 @@ class Container(containers.DeclarativeContainer):
         modules=[
             "user.interface.controllers.user_controller",
             "report.interface.controllers.report_controller",
+            "report.interface.controllers.report_comment_controller",
         ]
     )
 
     user_repo = providers.Singleton(PostgresUserRepository)
     report_repo = providers.Singleton(PostgresReportRepository)
+    report_comment_repo = providers.Singleton(PostgresReportCommentRepository)
+
     crypto = providers.Singleton(Crypto)
 
     user_service = providers.Factory(
@@ -28,4 +35,9 @@ class Container(containers.DeclarativeContainer):
         ReportService,
         repo=report_repo,
         user_repo=user_repo,
+    )
+
+    report_comment_service = providers.Factory(
+        ReportCommentService,
+        repo=report_comment_repo,
     )
