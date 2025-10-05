@@ -11,7 +11,11 @@ from report.domain.report import Report
 from common.auth import get_current_user, CurrentUser
 from common.logger import logger
 
-router = APIRouter(prefix="/reports", tags=["reports"])
+router = APIRouter(
+    prefix="/reports",
+    tags=["reports"],
+    dependencies=[Depends(get_current_user)],  # 모든 API 인증 필요
+)
 
 settings = get_settings()
 
@@ -69,7 +73,7 @@ def get_report(
     return report
 
 
-@router.get("/presigned-url", response_model=PresignedResponse)
+@router.get("/presigned-url", response_model=PresignedResponse, dependencies=[])
 def get_presigned_url(
     file_name: str = Query(..., description="파일 이름 (예: photo.jpg)"),
     file_type: str = Query(..., description="MIME 타입 (예: image/jpeg)"),

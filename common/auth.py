@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 from enum import StrEnum
 from typing import Annotated
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, status, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
 from config import get_settings
 
@@ -44,7 +44,7 @@ def decode_access_token(token: str):
         )
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/login")
+oauth2_scheme = HTTPBearer(scheme_name="BearerAuth")
 
 
 class CurrentUser:
@@ -57,7 +57,10 @@ class CurrentUser:
         return f"{self.id}({self.role}, type={self.user_type})"
 
 
-def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
+def get_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+):
+    token = credentials.credentials
     payload = decode_access_token(token)
     user_id = payload.get("user_id")
     role = payload.get("role")
@@ -67,7 +70,10 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
     return CurrentUser(user_id, Role(role), user_type)
 
 
-def get_admin_user(token: Annotated[str, Depends(oauth2_scheme)]):
+def get_admin_user(
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+):
+    token = credentials.credentials
     payload = decode_access_token(token)
     role = payload.get("role")
     if not role or role != Role.ADMIN:
