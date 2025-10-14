@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from uuid import uuid4
@@ -41,7 +41,7 @@ class ReportService:
             )
 
         # 제보 객체 생성
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         # 반경 500m 이내 기존 제보 조회
         nearby_reports = self.repo.find_nearby_reports(
@@ -121,6 +121,6 @@ class ReportService:
 
         report.score = risk_score_simplified_scaled(n_good, n_mid, n_bad)
         report.total_feedbacks = n
-        report.updated_at = datetime.utcnow()
+        report.updated_at = datetime.now(timezone.utc)
 
         return self.repo.update_feedback_counts(report)

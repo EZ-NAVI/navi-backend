@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import ulid
 from typing import List
 from route.domain.route import Route
@@ -57,6 +57,6 @@ class RouteService:
             path_data=path,
             duration=duration,
             score=hz_count / (len(hazards) + 1),
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         return self.repo.save(route)
