@@ -14,5 +14,5 @@ class Route(Base):
     dest_lng = Column(Float, nullable=False)
     path_data = Column(JSON, nullable=False)
     duration = Column(Integer, nullable=False)
-    score = Column(Float, nullable=True, default=0.0)
+    evaluation = Column(Float, nullable=True, default=0.0)
     created_at = Column(DateTime, default=datetime.utcnow)
