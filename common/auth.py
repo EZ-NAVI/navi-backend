@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import StrEnum
 from typing import Annotated
 from fastapi import Depends, HTTPException, status, Request
@@ -25,7 +25,7 @@ def create_access_token(
     ),  # expires_delta: timedelta = timedelta(hours=6) ← 기본 만료시간이 6시간으로 설정
 ):
 
-    expire = datetime.utcnow() + expires_delta
+    expire = datetime.now(timezone.utc) + expires_delta
     payload.update({"role": role, "exp": expire})
     encoded_jwt = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt

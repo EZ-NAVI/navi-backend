@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from fastapi import HTTPException, status
 import ulid
@@ -32,7 +32,7 @@ class UserService:
                 detail="Email already registered",
             )
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         user = User(
             user_id=str(ulid.new()),
             user_type=user_type,

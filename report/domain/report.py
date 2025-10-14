@@ -18,7 +18,12 @@ class Report(BaseModel):
     category: Optional[str] = None
     description: Optional[str] = None
     status: str = "pending"
-    score: Optional[float] = None
+
+    good_count: Optional[int] = Field(0, alias="goodCount")
+    normal_count: Optional[int] = Field(0, alias="normalCount")
+    bad_count: Optional[int] = Field(0, alias="badCount")
+    total_feedbacks: Optional[int] = Field(0, alias="totalFeedbacks")
+
     not_there: Optional[int] = Field(None, alias="notThere")
     created_at: Optional[datetime] = Field(None, alias="createdAt")
     updated_at: Optional[datetime] = Field(None, alias="updatedAt")

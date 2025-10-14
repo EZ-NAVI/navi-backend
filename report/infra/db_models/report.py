@@ -16,7 +16,13 @@ class Report(Base):
     category = Column(String, nullable=True)
     description = Column(String, nullable=True)
     status = Column(String, nullable=False, default="pending")
-    score = Column(Float, nullable=True, default=0.0)
+
+    # 평가 관련
+    good_count = Column(Integer, nullable=True, default=0)
+    normal_count = Column(Integer, nullable=True, default=0)
+    bad_count = Column(Integer, nullable=True, default=0)
+    total_feedbacks = Column(Integer, nullable=True, default=0)
+
     not_there = Column(Integer, nullable=True, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

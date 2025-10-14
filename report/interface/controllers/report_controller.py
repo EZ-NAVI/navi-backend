@@ -5,7 +5,6 @@ from typing import List
 from aws import s3_client
 from config import get_settings
 from datetime import datetime
-from containers import Container
 from report.application.report_service import ReportService
 from report.domain.report import Report
 from common.auth import get_current_user, CurrentUser
@@ -37,7 +36,7 @@ class PresignedResponse(BaseModel):
 @inject
 def create_report(
     req: ReportCreateRequest = Body(...),
-    service: ReportService = Depends(Provide[Container.report_service]),
+    service: ReportService = Depends(Provide["container.report_service"]),
     current: CurrentUser = Depends(get_current_user),
 ):
     logger.info(f"신고 생성 요청 uid={current.id}")
@@ -56,7 +55,7 @@ def create_report(
 @router.get("/", response_model=List[Report])
 @inject
 def list_reports(
-    service: ReportService = Depends(Provide[Container.report_service]),
+    service: ReportService = Depends(Provide["container.report_service"]),
 ):
     return service.list_reports()
 
@@ -65,7 +64,7 @@ def list_reports(
 @inject
 def get_report(
     report_id: str,
-    service: ReportService = Depends(Provide[Container.report_service]),
+    service: ReportService = Depends(Provide["container.report_service"]),
 ):
     report = service.get_report(report_id)
     if not report:
