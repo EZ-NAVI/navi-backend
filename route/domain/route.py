@@ -12,7 +12,7 @@ class Route(BaseModel):
     dest_lng: float = Field(..., alias="destLng")
     path_data: List[Dict[str, float]] = Field(..., alias="pathData")
     duration: int
-    score: Optional[float] = None
+    evaluation: Optional[float] = None
     created_at: Optional[datetime] = Field(None, alias="createdAt")
 
     model_config = ConfigDict(

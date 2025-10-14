@@ -16,7 +16,7 @@ class PostgresRouteRepository(RouteRepository):
                 dest_lng=route.dest_lng,
                 path_data=route.path_data,
                 duration=route.duration,
-                score=route.score,
+                evaluation=route.evaluation,
                 created_at=route.created_at,
             )
             db.add(db_route)
