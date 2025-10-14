@@ -2,6 +2,7 @@ from report.domain.repository.report_repo import ReportRepository
 from report.domain.report import Report as ReportVO
 from report.infra.db_models.report import Report as ReportDB
 from database import SessionLocal
+from sqlalchemy import text
 
 
 class PostgresReportRepository(ReportRepository):
@@ -18,7 +19,6 @@ class PostgresReportRepository(ReportRepository):
                 category=report.category,
                 description=report.description,
                 status=report.status,
-                score=report.score,
                 not_there=report.not_there,
                 created_at=report.created_at,
                 updated_at=report.updated_at,
@@ -57,3 +57,22 @@ class PostgresReportRepository(ReportRepository):
             db.commit()
             db.refresh(db_report)
             return ReportVO.from_orm(db_report)
+
+    def find_nearby_reports(self, lat, lng, radius_m):
+        with SessionLocal() as db:
+            query = text(
+                """
+                SELECT *
+                FROM report
+                WHERE 6371000 * 2 * ASIN(
+                    SQRT(
+                        POWER(SIN(RADIANS(:lat - location_lat)/2), 2)
+                        + COS(RADIANS(:lat)) * COS(RADIANS(location_lat))
+                        * POWER(SIN(RADIANS(:lng - location_lng)/2), 2)
+                    )
+                ) <= :radius
+            """
+            )
+            result = db.execute(query, {"lat": lat, "lng": lng, "radius": radius_m})
+            rows = result.fetchall()
+            return [ReportVO.from_orm(ReportDB(**dict(row))) for row in rows]

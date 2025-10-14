@@ -18,3 +18,15 @@ class ReportRepository(ABC):
     def find_all(self) -> List[Report]:
         """전체 제보 조회 (최신순)"""
         raise NotImplementedError
+
+    @abstractmethod
+    def update_feedback_counts(self, report: Report) -> Report:
+        """제보 피드백 카운트 및 점수 업데이트"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def find_nearby_reports(
+        self, lat: float, lng: float, radius_m: float
+    ) -> List[Report]:
+        """지정 반경 내 제보 리스트 반환"""
+        raise NotImplementedError

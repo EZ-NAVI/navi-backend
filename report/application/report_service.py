@@ -2,12 +2,15 @@ from fastapi import HTTPException, status
 from datetime import datetime
 from typing import List
 
+from uuid import uuid4
 import ulid
 import math
 
 from user.domain.repository.user_repo import UserRepository
 from report.domain.report import Report
 from report.domain.repository.report_repo import ReportRepository
+
+CLUSTER_RADIUS = 500
 
 
 class ReportService:
@@ -40,18 +43,28 @@ class ReportService:
         # 제보 객체 생성
         now = datetime.utcnow()
 
+        # 반경 500m 이내 기존 제보 조회
+        nearby_reports = self.repo.find_nearby_reports(
+            lat=location_lat, lng=location_lng, radius_m=CLUSTER_RADIUS
+        )
+
+        # 기존 클러스터 존재하면 동일 cluster_id 부여, 없으면 새로 생성
+        if nearby_reports:
+            cluster_id = nearby_reports[0].cluster_id or nearby_reports[0].report_id
+        else:
+            cluster_id = str(uuid4())
+
         report = Report(
             report_id=str(ulid.new()),
             reporter_id=reporter_id,
             reporter_type=reporter_type,
             location_lat=location_lat,
             location_lng=location_lng,
-            # cluster_id: 아직 클러스터링 미적용 → None으로 초기화
-            cluster_id=None,
+            cluster_id=cluster_id,
             image_url=image_url,
             category=category,
             description=description,
-            status="pending",
+            status="PENDING",
             good_count=0,
             normal_count=0,
             bad_count=0,
@@ -106,6 +119,7 @@ class ReportService:
             # 최종 점수: 중립 보정 + 신뢰도 반영 + 스케일 조정
             return (avg * reliability + 0.5 * (1 - reliability)) * scale
 
+        report.score = risk_score_simplified_scaled(n_good, n_mid, n_bad)
         report.total_feedbacks = n
         report.updated_at = datetime.utcnow()
 
