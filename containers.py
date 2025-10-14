@@ -17,8 +17,8 @@ class Container(containers.DeclarativeContainer):
         modules=[
             "user.interface.controllers.user_controller",
             "report.interface.controllers.report_controller",
-            "route.interface.controllers.route_controller",
             "report.interface.controllers.report_comment_controller",
+            "route.interface.controllers.route_controller",
         ]
     )
 
@@ -41,11 +41,13 @@ class Container(containers.DeclarativeContainer):
         user_repo=user_repo,
     )
 
+    report_comment_service = providers.Factory(
+        ReportCommentService,
+        repo=report_comment_repo,
+    )
+
     route_service = providers.Factory(
         RouteService,
         repo=route_repo,
         report_repo=report_repo,
-    report_comment_service = providers.Factory(
-        ReportCommentService,
-        repo=report_comment_repo,
     )
