@@ -2,7 +2,6 @@ from fastapi import APIRouter, Body, Depends
 from dependency_injector.wiring import inject, Provide
 from pydantic import BaseModel
 from route.application.route_service import RouteService
-from containers import Container
 from common.auth import get_current_user, CurrentUser
 
 router = APIRouter(prefix="/routes", tags=["routes"])
@@ -20,7 +19,7 @@ class RouteCreateRequest(BaseModel):
 @inject
 def create_route(
     req: RouteCreateRequest = Body(...),
-    service: RouteService = Depends(Provide[Container.route_service]),
+    service: RouteService = Depends(Provide["container.route_service"]),
     current: CurrentUser = Depends(get_current_user),
 ):
     route = service.create_route(
