@@ -4,7 +4,7 @@ from typing import List
 from route.domain.route import Route
 from route.domain.repository.route_repo import RouteRepository
 from report.domain.repository.report_repo import ReportRepository
-from algorithms.safe_path_finder import (
+from route.algorithms.safe_path_finder import (
     astar_route,
     total_distance,
     count_hazards,
