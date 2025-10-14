@@ -37,3 +37,23 @@ class PostgresReportRepository(ReportRepository):
         with SessionLocal() as db:
             reports = db.query(ReportDB).order_by(ReportDB.created_at.desc()).all()
             return [ReportVO.from_orm(r) for r in reports]
+
+    def update_feedback_counts(self, report: ReportVO) -> ReportVO:
+        with SessionLocal() as db:
+            db_report = (
+                db.query(ReportDB)
+                .filter(ReportDB.report_id == report.report_id)
+                .first()
+            )
+            if not db_report:
+                return None
+
+            db_report.good_count = report.good_count
+            db_report.normal_count = report.normal_count
+            db_report.bad_count = report.bad_count
+            db_report.total_feedbacks = report.total_feedbacks
+            db_report.updated_at = report.updated_at
+
+            db.commit()
+            db.refresh(db_report)
+            return ReportVO.from_orm(db_report)
