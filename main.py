@@ -49,3 +49,4 @@ def custom_openapi():
 
 
 app.openapi = custom_openapi
+app.include_router(report_comment_router)

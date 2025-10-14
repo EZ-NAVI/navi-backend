@@ -41,7 +41,7 @@ class UserResponse(User):
     matched: bool
 
 
-@router.post("/register", response_model=MessageResponse)
+@router.post("/register", response_model=MessageResponse, dependencies=[])
 @inject
 def register_user(
     req: UserRegisterRequest,
@@ -61,7 +61,7 @@ def register_user(
     return {"message": "User registered successfully"}
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=TokenResponse, dependencies=[])
 @inject
 def login_user(
     req: UserLoginRequest,
@@ -75,7 +75,9 @@ def login_user(
     return TokenResponse(access_token=access_token)
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get(
+    "/me", response_model=UserResponse, dependencies=[Depends(get_current_user)]
+)
 @inject
 def get_current_user_info(
     service: UserService = Depends(Provide["container.user_service"]),
