@@ -7,8 +7,6 @@ from route.domain.repository.route_repo import RouteRepository
 from report.domain.repository.report_repo import ReportRepository
 from route.algorithms.safe_path_finder import (
     astar_route,
-    Hazard,
-    HazardCategory,
     Point,
 )
 from config import get_settings
@@ -28,34 +26,15 @@ class RouteService:
         dest_lat: float,
         dest_lng: float,
     ) -> List[Dict[str, float]]:
-        reports = self.report_repo.find_all()
-        valid_categories = {c.value for c in HazardCategory}
-        hazards: List[Hazard] = []
-
         """
         1. TMap 보행자 경로를 요청해 기본 좌표 경로를 받는다.
-        2. DB에서 위험 제보를 불러와 Hazard 객체 리스트를 만든다.
+        2. PostGIS를 이용해 근처 위험 제보만 불러와 Hazard 리스트를 만든다.
         3. 위험도 기반으로 A* 알고리즘을 돌려 안전한 경로를 반환한다.
         """
-
-        for r in reports:
-            if not r.category or r.category not in valid_categories:
-                continue
-            if not r.location_lat or not r.location_lng:
-                continue
-
-            total_feedbacks = max(r.total_feedbacks or 1, 1)
-            risk_score = (r.bad_count or 0) / total_feedbacks
-            risk_score = round(risk_score * 2, 2) or 0.5
-
-            hazards.append(
-                Hazard(
-                    lat=r.location_lat,
-                    lon=r.location_lng,
-                    category=HazardCategory(r.category),
-                    score=risk_score,
-                )
-            )
+        # PostGIS로 반경 내 위험 제보 조회
+        hazards = self.report_repo.find_nearby(
+            origin_lat, origin_lng, dest_lat, dest_lng, buffer_m=2000
+        )
 
         # TMap 보행자 경로 API 호출
         url = "https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json"
