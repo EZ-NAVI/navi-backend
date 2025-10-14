@@ -1,147 +1,107 @@
-from typing import List, Dict, Tuple
-from enum import Enum
-import heapq
-import math
+import ulid
+import requests
+from datetime import datetime, timezone
+from typing import List, Dict, Optional
+from route.domain.route import Route
+from route.domain.repository.route_repo import RouteRepository
+from report.domain.repository.report_repo import ReportRepository
+from route.algorithms.safe_path_finder import (
+    build_graph,
+    astar_graph,
+    Point,
+)
+from config import get_settings
 
 
-# --- 데이터 모델 ---
-class Point:
-    def __init__(self, lat: float, lon: float):
-        self.lat = lat
-        self.lon = lon
+class RouteService:
+    def __init__(self, repo: RouteRepository, report_repo: ReportRepository):
+        self.repo = repo
+        self.report_repo = report_repo
+        self.settings = get_settings()
 
+    # 미리보기 (경로 생성만, 저장 X)
+    def generate_safe_route(
+        self,
+        origin_lat: float,
+        origin_lng: float,
+        dest_lat: float,
+        dest_lng: float,
+    ) -> List[Dict[str, float]]:
+        """
+        1. TMap 보행자 경로를 요청해 기본 좌표 경로를 받는다.
+        2. PostGIS를 이용해 근처 위험 제보만 불러와 Hazard 리스트를 만든다.
+        3. 위험도 기반으로 A* 알고리즘을 돌려 안전한 경로를 반환한다.
+        """
+        # PostGIS로 반경 내 위험 제보 조회
+        hazards = self.report_repo.find_nearby(
+            origin_lat, origin_lng, dest_lat, dest_lng, buffer_m=2000
+        )
 
-class HazardCategory(str, Enum):
-    """위험구역 카테고리"""
+        # TMap 보행자 경로 API 호출
+        url = "https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json"
+        headers = {"appKey": self.settings.tmap_app_key}
+        data = {
+            "startX": origin_lng,
+            "startY": origin_lat,
+            "endX": dest_lng,
+            "endY": dest_lat,
+            "reqCoordType": "WGS84GEO",
+            "resCoordType": "WGS84GEO",
+            "startName": "출발지",
+            "endName": "도착지",
+        }
 
-    FEAR = "공포"
-    ROAD_CLOSED = "도로폐쇄"
-    CONSTRUCTION = "공사장"
-    OBSTACLE = "장애물"
-    NO_SIDEWALK = "인도 없음"
+        response = requests.post(url, headers=headers, data=data)
+        response.raise_for_status()
+        features = response.json().get("features", [])
 
+        # LineString 좌표 추출 (기본 경로)
+        base_lines = []
+        for f in features:
+            if f["geometry"]["type"] == "LineString":
+                coords = f["geometry"]["coordinates"]
+                # [lon, lat] → (lat, lon)
+                line = [(c[1], c[0]) for c in coords]
+                base_lines.append(line)
 
-# --- 카테고리별 고정 반경 (m 단위) ---
-CATEGORY_RADIUS = {
-    HazardCategory.FEAR: 100,
-    HazardCategory.ROAD_CLOSED: 200,
-    HazardCategory.CONSTRUCTION: 200,
-    HazardCategory.OBSTACLE: 50,
-    HazardCategory.NO_SIDEWALK: 100,
-}
+        # 그래프 구성
+        graph = build_graph(base_lines, hazards)
 
+        # A* 기반 위험 회피 경로 생성
+        start = Point(origin_lat, origin_lng)
+        end = Point(dest_lat, dest_lng)
+        safe_path = astar_graph(graph, start, end)
 
-class Hazard:
-    def __init__(self, lat: float, lon: float, category: HazardCategory, score: float):
-        self.lat = lat
-        self.lon = lon
-        self.category = category
-        self.radius = CATEGORY_RADIUS.get(category, 100)
-        self.score = score
+        return safe_path
 
+    # 실제 이동 시 DB 저장
+    def save_route_if_traveled(
+        self,
+        user_id: str,
+        origin_lat: float,
+        origin_lng: float,
+        dest_lat: float,
+        dest_lng: float,
+        duration: int,
+        path_data: List[Dict[str, float]],
+    ) -> Route:
+        route = Route(
+            route_id=str(ulid.new()),
+            user_id=user_id,
+            origin_lat=origin_lat,
+            origin_lng=origin_lng,
+            dest_lat=dest_lat,
+            dest_lng=dest_lng,
+            path_data=path_data,
+            duration=duration,
+            created_at=datetime.now(timezone.utc),
+        )
+        return self.repo.save(route)
 
-# --- 유틸 함수 ---
-def haversine(lat1, lon1, lat2, lon2):
-    """위도/경도 거리 계산 (m 단위)"""
-    R = 6371000
-    phi1, phi2 = math.radians(lat1), math.radians(lat2)
-    dphi = math.radians(lat2 - lat1)
-    dlambda = math.radians(lon2 - lon1)
-
-    a = (
-        math.sin(dphi / 2) ** 2
-        + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
-    )
-    return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-
-
-def segment_circle_intersect(p1, p2, center, radius):
-    """선분(p1-p2)와 원(center, radius)이 교차하는지 체크"""
-    x1, y1 = p1[1], p1[0]
-    x2, y2 = p2[1], p2[0]
-    cx, cy = center[1], center[0]
-
-    dx, dy = x2 - x1, y2 - y1
-    fx, fy = x1 - cx, y1 - cy
-
-    a = dx * dx + dy * dy
-    b = 2 * (fx * dx + fy * dy)
-    c = (fx * fx + fy * fy) - (radius / 111000) ** 2
-
-    discriminant = b * b - 4 * a * c
-    if discriminant < 0:
-        return False
-
-    discriminant = math.sqrt(discriminant)
-    t1 = (-b - discriminant) / (2 * a)
-    t2 = (-b + discriminant) / (2 * a)
-    return (0 <= t1 <= 1) or (0 <= t2 <= 1)
-
-
-# --- 세그먼트 그래프 생성 ---
-def build_graph(lines: List[List[Tuple[float, float]]], hazards: List[Hazard]):
-    """
-    TMap LineString 데이터를 기반으로 도로 그래프를 구성.
-    각 세그먼트에 위험도 가중치를 추가함.
-    """
-    graph = {}
-
-    for line in lines:
-        for i in range(len(line) - 1):
-            p1 = line[i]
-            p2 = line[i + 1]
-            dist = haversine(p1[0], p1[1], p2[0], p2[1])
-            weight = dist  # 기본 거리 기반 가중치
-
-            # 위험 구역과 교차하면 페널티 부여
-            for hz in hazards:
-                if segment_circle_intersect(p1, p2, (hz.lat, hz.lon), hz.radius):
-                    weight += hz.score * 300  # 위험도 높은 세그먼트는 회피
-
-            # 양방향 그래프 구성
-            graph.setdefault(p1, []).append((p2, weight))
-            graph.setdefault(p2, []).append((p1, weight))
-
-    return graph
-
-
-# --- A* 그래프 탐색 ---
-def astar_graph(graph, start: Tuple[float, float], goal: Tuple[float, float]):
-    """
-    세그먼트 그래프 기반 A* 탐색
-    """
-    open_set = []
-    heapq.heappush(open_set, (0, start))
-    came_from = {}
-    g_score = {start: 0}
-
-    while open_set:
-        _, current = heapq.heappop(open_set)
-
-        # 도착 기준: 20m 이내
-        if haversine(current[0], current[1], goal[0], goal[1]) < 20:
-            return reconstruct_path(came_from, current, start, goal)
-
-        for neighbor, weight in graph.get(current, []):
-            tentative_g = g_score[current] + weight
-
-            if neighbor not in g_score or tentative_g < g_score[neighbor]:
-                g_score[neighbor] = tentative_g
-                f_score = tentative_g + haversine(
-                    neighbor[0], neighbor[1], goal[0], goal[1]
-                )
-                heapq.heappush(open_set, (f_score, neighbor))
-                came_from[neighbor] = current
-
-    return []
-
-
-def reconstruct_path(came_from, current, start, goal):
-    """경로 역추적"""
-    path = [goal]
-    while current in came_from:
-        path.append(current)
-        current = came_from[current]
-    path.append(start)
-    path.reverse()
-    return [{"lat": lat, "lon": lon} for lat, lon in path]
+    # 아동 후 평가 (별점 등록)
+    def evaluate_route(self, route_id: str, evaluation: float) -> Optional[Route]:
+        route = self.repo.get(route_id)
+        if not route:
+            return None
+        route.evaluation = evaluation
+        return self.repo.save(route)
