@@ -1,5 +1,6 @@
-from datetime import datetime, timezone
 import ulid
+import requests
+from datetime import datetime, timezone
 from typing import List, Dict, Optional
 from route.domain.route import Route
 from route.domain.repository.route_repo import RouteRepository
@@ -10,12 +11,14 @@ from route.algorithms.safe_path_finder import (
     HazardCategory,
     Point,
 )
+from config import get_settings
 
 
 class RouteService:
     def __init__(self, repo: RouteRepository, report_repo: ReportRepository):
         self.repo = repo
         self.report_repo = report_repo
+        self.settings = get_settings()
 
     # 미리보기 (경로 생성만, 저장 X)
     def generate_safe_route(
@@ -28,6 +31,12 @@ class RouteService:
         reports = self.report_repo.find_all()
         valid_categories = {c.value for c in HazardCategory}
         hazards: List[Hazard] = []
+
+        """
+        1. TMap 보행자 경로를 요청해 기본 좌표 경로를 받는다.
+        2. DB에서 위험 제보를 불러와 Hazard 객체 리스트를 만든다.
+        3. 위험도 기반으로 A* 알고리즘을 돌려 안전한 경로를 반환한다.
+        """
 
         for r in reports:
             if not r.category or r.category not in valid_categories:
@@ -48,9 +57,39 @@ class RouteService:
                 )
             )
 
+        # TMap 보행자 경로 API 호출
+        url = "https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json"
+        headers = {"appKey": self.settings.tmap_app_key}
+        data = {
+            "startX": origin_lng,
+            "startY": origin_lat,
+            "endX": dest_lng,
+            "endY": dest_lat,
+            "reqCoordType": "WGS84GEO",
+            "resCoordType": "WGS84GEO",
+            "startName": "출발지",
+            "endName": "도착지",
+        }
+
+        response = requests.post(url, headers=headers, data=data)
+        response.raise_for_status()
+        features = response.json().get("features", [])
+
+        # LineString 좌표 추출 (기본 경로)
+        base_lines = []
+        for f in features:
+            if f["geometry"]["type"] == "LineString":
+                coords = f["geometry"]["coordinates"]
+                # [lon, lat] → (lat, lon)
+                line = [(c[1], c[0]) for c in coords]
+                base_lines.append(line)
+
+        # A* 기반 위험 회피 경로 생성
         start = Point(origin_lat, origin_lng)
         end = Point(dest_lat, dest_lng)
-        return astar_route(start, end, hazards)
+        safe_path = astar_route(start, end, hazards)
+
+        return safe_path
 
     # 실제 이동 시 DB 저장
     def save_route_if_traveled(

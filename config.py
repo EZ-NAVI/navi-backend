@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     aws_region: str
     aws_s3_bucket_name: str
 
+    # TMap
+    tmap_app_key: str
+
 
 @lru_cache
 def get_settings():
