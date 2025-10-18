@@ -20,13 +20,19 @@ class ReportNotThereService:
             user_id=user_id,
             created_at=datetime.utcnow(),
         )
-        self.repo.save(record)
-
-        # 제보의 not_there 카운트 증가
+        # 제보 조회
         report = self.report_repo.get(report_id)
         if not report:
             raise HTTPException(status_code=404, detail="제보를 찾을 수 없습니다.")
 
+        # not_there 카운트 증가
         report.not_there = (report.not_there or 0) + 1
+
+        # 3 초과 시 자동 삭제
+        if report.not_there > 3:
+            self.report_repo.delete(report_id)
+            return {"message": "이 제보는 '이제 없어요'가 3회 초과되어 삭제되었습니다."}
+
+        # 그렇지 않으면 카운트만 업데이트
         self.report_repo.update_feedback_counts(report)
-        return {"message": "'이제 없어요'가 반영되었습니다."}
+        return {"message": "'이제 없어요'가 반영되었습니다.", "notThere": report.not_there}
