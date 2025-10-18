@@ -132,6 +132,54 @@ class PostgresReportRepository(ReportRepository):
 
             return hazards
 
+    def find_nearby_reports(self, lat: float, lng: float, radius_m: float):
+        """특정 좌표 반경 내 기존 제보 조회 (cluster_id 판별용)"""
+        with SessionLocal() as db:
+            query = text(
+                """
+                SELECT *
+                FROM report
+                WHERE ST_DWithin(
+                    geography(ST_MakePoint(location_lng, location_lat)),
+                    geography(ST_MakePoint(:lng, :lat)),
+                    :radius
+                )
+                ORDER BY created_at DESC
+                """
+            )
+
+            rows = db.execute(
+                query,
+                {"lat": lat, "lng": lng, "radius": radius_m},
+            ).fetchall()
+
+            # SQLAlchemy Text query는 ORM 매핑이 아니므로 수동으로 VO 변환
+            nearby_reports = []
+            for row in rows:
+                nearby_reports.append(
+                    ReportVO(
+                        report_id=row.report_id,
+                        reporter_id=row.reporter_id,
+                        reporter_type=row.reporter_type,
+                        location_lat=row.location_lat,
+                        location_lng=row.location_lng,
+                        cluster_id=row.cluster_id,
+                        image_url=row.image_url,
+                        category=row.category,
+                        description=row.description,
+                        status=row.status,
+                        good_count=row.good_count,
+                        normal_count=row.normal_count,
+                        bad_count=row.bad_count,
+                        total_feedbacks=row.total_feedbacks,
+                        not_there=row.not_there,
+                        created_at=row.created_at,
+                        updated_at=row.updated_at,
+                    )
+                )
+
+            return nearby_reports
+
     def find_by_cluster_and_category(self, cluster_id: str, category: str):
         with SessionLocal() as db:
             reports = (
