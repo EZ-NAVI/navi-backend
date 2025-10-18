@@ -2,6 +2,7 @@ from fastapi import APIRouter, Body, Depends
 from dependency_injector.wiring import inject, Provide
 from pydantic import BaseModel
 from typing import List, Dict, Optional
+from containers import Container
 from route.application.route_service import RouteService
 from common.auth import get_current_user, CurrentUser
 
@@ -34,7 +35,7 @@ class RouteEvaluationRequest(BaseModel):
 @inject
 def preview_route(
     req: RoutePreviewRequest = Body(...),
-    service: RouteService = Depends(Provide["container.route_service"]),
+    service: RouteService = Depends(Provide[Container.route_service]),
 ):
     path = service.generate_safe_route(
         origin_lat=req.origin_lat,
@@ -50,7 +51,7 @@ def preview_route(
 @inject
 def save_route(
     req: RouteCreateRequest = Body(...),
-    service: RouteService = Depends(Provide["container.route_service"]),
+    service: RouteService = Depends(Provide[Container.route_service]),
     current: CurrentUser = Depends(get_current_user),
 ):
     route = service.save_route_if_traveled(
@@ -71,7 +72,7 @@ def save_route(
 def evaluate_route(
     route_id: str,
     req: RouteEvaluationRequest = Body(...),
-    service: RouteService = Depends(Provide["container.route_service"]),
+    service: RouteService = Depends(Provide[Container.route_service]),
     current: CurrentUser = Depends(get_current_user),
 ):
     route = service.evaluate_route(route_id, req.evaluation)
