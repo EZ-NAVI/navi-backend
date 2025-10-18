@@ -123,3 +123,13 @@ class PostgresReportRepository(ReportRepository):
                 )
 
             return hazards
+
+    def find_by_cluster_and_category(self, cluster_id: str, category: str):
+        with SessionLocal() as db:
+            reports = (
+                db.query(ReportDB)
+                .filter(ReportDB.cluster_id == cluster_id, ReportDB.category == category)
+                .order_by(ReportDB.created_at.desc())
+                .all()
+            )
+            return [ReportVO.from_orm(r) for r in reports]

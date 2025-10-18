@@ -96,3 +96,13 @@ def get_presigned_url(
         return {"upload_url": upload_url, "file_url": file_url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/filter", response_model=List[Report])
+@inject
+def filter_reports(
+    cluster_id: str = Query(..., description="클러스터 ID"),
+    category: str = Query(..., description="카테고리"),
+    service: ReportService = Depends(Provide["container.report_service"]),
+):
+    return service.get_reports_by_cluster_and_category(cluster_id, category)

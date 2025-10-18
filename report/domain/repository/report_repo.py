@@ -16,7 +16,7 @@ class ReportRepository(ABC):
 
     @abstractmethod
     def find_all(self) -> List[Report]:
-        """전체 제보 조회 (최신순)"""
+        """cluster_id별 제보 조회 (최신순)"""
         raise NotImplementedError
 
     @abstractmethod
@@ -30,3 +30,8 @@ class ReportRepository(ABC):
     ) -> List[Report]:
         """지정 반경 내 제보 리스트 반환"""
         raise NotImplementedError
+
+    @abstractmethod
+    def find_by_cluster_and_category(self, cluster_id: str, category: str) -> List[Report]:
+        raise NotImplementedError
+
