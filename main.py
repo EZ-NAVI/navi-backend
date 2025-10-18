@@ -7,6 +7,9 @@ from report.interface.controllers.report_controller import router as report_rout
 from report.interface.controllers.report_comment_controller import (
     router as report_comment_router,
 )
+from report.interface.controllers.report_not_there_controller import (  # ✅ 추가
+    router as report_not_there_router,
+)
 from route.interface.controllers.route_controller import router as route_router
 
 app = FastAPI(title="NAVI Backend", version="0.1.0")
@@ -23,6 +26,7 @@ def health():
 app.include_router(user_router)
 app.include_router(report_router)
 app.include_router(report_comment_router)
+app.include_router(report_not_there_router)
 app.include_router(route_router)
 
 
