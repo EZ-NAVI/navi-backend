@@ -3,6 +3,7 @@ from report.domain.report import Report as ReportVO
 from report.infra.db_models.report import Report as ReportDB
 from database import SessionLocal
 from sqlalchemy import text
+from sqlalchemy.orm import aliased
 from route.algorithms.safe_path_finder import Hazard, HazardCategory
 
 
@@ -36,8 +37,16 @@ class PostgresReportRepository(ReportRepository):
 
     def find_all(self):
         with SessionLocal() as db:
-            reports = db.query(ReportDB).order_by(ReportDB.created_at.desc()).all()
-            return [ReportVO.from_orm(r) for r in reports]
+            query = text("""
+                SELECT DISTINCT ON (cluster_id) *
+                FROM report
+                WHERE cluster_id IS NOT NULL
+                ORDER BY cluster_id, created_at DESC
+            """)
+            result = db.execute(query).mappings().all()
+
+            return [ReportVO(**dict(row)) for row in result]
+
 
     def update_feedback_counts(self, report: ReportVO) -> ReportVO:
         with SessionLocal() as db:
@@ -114,3 +123,13 @@ class PostgresReportRepository(ReportRepository):
                 )
 
             return hazards
+
+    def find_by_cluster_and_category(self, cluster_id: str, category: str):
+        with SessionLocal() as db:
+            reports = (
+                db.query(ReportDB)
+                .filter(ReportDB.cluster_id == cluster_id, ReportDB.category == category)
+                .order_by(ReportDB.created_at.desc())
+                .all()
+            )
+            return [ReportVO.from_orm(r) for r in reports]

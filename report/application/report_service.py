@@ -124,3 +124,7 @@ class ReportService:
         report.updated_at = datetime.now(timezone.utc)
 
         return self.repo.update_feedback_counts(report)
+
+
+    def get_reports_by_cluster_and_category(self, cluster_id: str, category: str):
+        return self.repo.find_by_cluster_and_category(cluster_id, category)
