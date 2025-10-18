@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from dependency_injector.wiring import inject, Provide
 from pydantic import BaseModel
+from containers import Container
 from typing import List
 from aws import s3_client
 from config import get_settings
@@ -36,7 +37,7 @@ class PresignedResponse(BaseModel):
 @inject
 def create_report(
     req: ReportCreateRequest = Body(...),
-    service: ReportService = Depends(Provide["container.report_service"]),
+    service: ReportService = Depends(Provide[Container.report_service]),
     current: CurrentUser = Depends(get_current_user),
 ):
     logger.info(f"신고 생성 요청 uid={current.id}")
@@ -55,7 +56,7 @@ def create_report(
 @router.get("/", response_model=List[Report])
 @inject
 def list_reports(
-    service: ReportService = Depends(Provide["container.report_service"]),
+    service: ReportService = Depends(Provide[Container.report_service]),
 ):
     return service.list_reports()
 
@@ -64,7 +65,7 @@ def list_reports(
 @inject
 def get_report(
     report_id: str,
-    service: ReportService = Depends(Provide["container.report_service"]),
+    service: ReportService = Depends(Provide[Container.report_service]),
 ):
     report = service.get_report(report_id)
     if not report:
@@ -103,6 +104,6 @@ def get_presigned_url(
 def filter_reports(
     cluster_id: str = Query(..., description="클러스터 ID"),
     category: str = Query(..., description="카테고리"),
-    service: ReportService = Depends(Provide["container.report_service"]),
+    service: ReportService = Depends(Provide[Container.report_service]),
 ):
     return service.get_reports_by_cluster_and_category(cluster_id, category)

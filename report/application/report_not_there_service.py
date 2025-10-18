@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import ulid
 from fastapi import HTTPException
 from report.domain.report_not_there import ReportNotThere
@@ -18,7 +18,7 @@ class ReportNotThereService:
             id=str(ulid.new()),
             report_id=report_id,
             user_id=user_id,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
         )
         # 제보 조회
         report = self.report_repo.get(report_id)

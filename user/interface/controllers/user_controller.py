@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr
 from dependency_injector.wiring import inject, Provide
+from containers import Container
 from user.application.user_service import UserService
 from user.domain.user import User
 from typing import Optional
@@ -45,7 +46,7 @@ class UserResponse(User):
 @inject
 def register_user(
     req: UserRegisterRequest,
-    service: UserService = Depends(Provide["container.user_service"]),
+    service: UserService = Depends(Provide[Container.user_service]),
 ):
     logger.info("회원가입 요청 시작")
     user = service.register(
@@ -65,7 +66,7 @@ def register_user(
 @inject
 def login_user(
     req: UserLoginRequest,
-    service: UserService = Depends(Provide["container.user_service"]),
+    service: UserService = Depends(Provide[Container.user_service]),
 ):
     logger.info("로그인 요청 시작")
 
@@ -80,7 +81,7 @@ def login_user(
 )
 @inject
 def get_current_user_info(
-    service: UserService = Depends(Provide["container.user_service"]),
+    service: UserService = Depends(Provide[Container.user_service]),
     current: CurrentUser = Depends(get_current_user),  # JWT 인증 사용
 ):
     user = service.get(current.user_id)

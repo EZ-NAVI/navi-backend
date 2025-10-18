@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import ulid
 from typing import List
 from report.domain.report_comment import ReportComment
@@ -15,8 +15,8 @@ class ReportCommentService:
             report_id=report_id,
             user_id=user_id,
             content=content,
-            created_at=datetime.utcnow(),
-            updated_at=datetime.utcnow(),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
         )
         return self.repo.save(comment)
 
