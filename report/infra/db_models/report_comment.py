@@ -8,7 +8,7 @@ class ReportComment(Base):
 
     comment_id = Column(String, primary_key=True)
     report_id = Column(String, ForeignKey("report.report_id"), nullable=False)
-    user_id = Column(String, nullable=False)
+    author_id = Column(String, nullable=False)
     content = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
