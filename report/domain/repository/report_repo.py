@@ -15,6 +15,11 @@ class ReportRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def delete(self, report_id: str) -> None:
+        """report_id로 제보 삭제"""
+        raise NotImplementedError
+
+    @abstractmethod
     def find_all(self) -> List[Report]:
         """cluster_id별 제보 조회 (최신순)"""
         raise NotImplementedError

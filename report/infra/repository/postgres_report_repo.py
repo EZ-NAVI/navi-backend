@@ -35,6 +35,14 @@ class PostgresReportRepository(ReportRepository):
             report = db.query(ReportDB).filter(ReportDB.report_id == report_id).first()
             return ReportVO.from_orm(report) if report else None
 
+    def delete(self, report_id: str) -> None:
+        with SessionLocal() as db:
+            report = db.query(ReportDB).filter(ReportDB.report_id == report_id).first()
+            if report:
+                db.delete(report)
+                db.commit()
+
+
     def find_all(self):
         with SessionLocal() as db:
             query = text("""

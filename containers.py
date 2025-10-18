@@ -9,6 +9,10 @@ from report.application.report_comment_service import ReportCommentService
 from report.infra.repository.postgres_report_comment_repo import (
     PostgresReportCommentRepository,
 )
+from report.application.report_not_there_service import ReportNotThereService
+from report.infra.repository.postgres_report_not_there_repo import (
+    PostgresReportNotThereRepository,
+)
 from utils.crypto import Crypto
 
 
@@ -18,14 +22,16 @@ class Container(containers.DeclarativeContainer):
             "user.interface.controllers.user_controller",
             "report.interface.controllers.report_controller",
             "report.interface.controllers.report_comment_controller",
+            "report.interface.controllers.report_not_there_controller",
             "route.interface.controllers.route_controller",
         ]
     )
 
     user_repo = providers.Singleton(PostgresUserRepository)
     report_repo = providers.Singleton(PostgresReportRepository)
-    route_repo = providers.Singleton(PostgresRouteRepository)
     report_comment_repo = providers.Singleton(PostgresReportCommentRepository)
+    report_not_there_repo = providers.Singleton(PostgresReportNotThereRepository)
+    route_repo = providers.Singleton(PostgresRouteRepository)
 
     crypto = providers.Singleton(Crypto)
 
@@ -45,6 +51,13 @@ class Container(containers.DeclarativeContainer):
         ReportCommentService,
         repo=report_comment_repo,
     )
+
+    report_not_there_service = providers.Factory(
+        ReportNotThereService,
+        repo=report_not_there_repo,
+        report_repo=report_repo,
+    )
+
 
     route_service = providers.Factory(
         RouteService,
