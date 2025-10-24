@@ -5,7 +5,7 @@ from typing import List, Dict, Optional
 from route.domain.route import Route
 from route.domain.repository.route_repo import RouteRepository
 from report.domain.repository.report_repo import ReportRepository
-from route.algorithms.safe_path_finder import build_graph, astar_graph
+from route.algorithms.safe_path_finder import build_graph, astar_graph, Hazard
 from config import get_settings
 
 
@@ -35,7 +35,12 @@ class RouteService:
 
         # TMap 보행자 경로 API 호출
         url = "https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json"
-        headers = {"appKey": self.settings.tmap_app_key}
+
+        headers = {
+            "appKey": self.settings.tmap_app_key,
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+
         data = {
             "startX": origin_lng,
             "startY": origin_lat,
@@ -48,20 +53,36 @@ class RouteService:
         }
 
         response = requests.post(url, headers=headers, data=data)
+
         response.raise_for_status()
         features = response.json().get("features", [])
 
         # LineString 좌표 추출 (기본 경로)
         base_lines = []
         for f in features:
-            if f["geometry"]["type"] == "LineString":
-                coords = f["geometry"]["coordinates"]
+            geom = f.get("geometry")
+            if geom and geom.get("type") == "LineString":
+                coords = geom["coordinates"]
                 # [lon, lat] → (lat, lon)
                 line = [(c[1], c[0]) for c in coords]
                 base_lines.append(line)
 
+        # 위험구역이 없으면 기본 경로 반환
+        if not hazards:
+            print("No hazards nearby — returning base route directly.")
+            flat_path = [
+                {"lat": lat, "lon": lon} for line in base_lines for lat, lon in line
+            ]
+            return flat_path
+
+        # 위험구역 객체 변환
+        hazard_objs = [
+            Hazard(h.location_lat, h.location_lng, h.category, score=1.0)
+            for h in hazards
+        ]
+
         # 그래프 구성
-        graph = build_graph(base_lines, hazards)
+        graph = build_graph(base_lines, hazard_objs)
 
         # A* 기반 위험 회피 경로 생성
         start = (origin_lat, origin_lng)
