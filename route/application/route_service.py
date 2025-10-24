@@ -35,7 +35,12 @@ class RouteService:
 
         # TMap 보행자 경로 API 호출
         url = "https://apis.openapi.sk.com/tmap/routes/pedestrian?version=1&format=json"
-        headers = {"appKey": self.settings.tmap_app_key}
+
+        headers = {
+            "appKey": self.settings.tmap_app_key,
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
+
         data = {
             "startX": origin_lng,
             "startY": origin_lat,
