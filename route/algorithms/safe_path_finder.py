@@ -5,12 +5,6 @@ import math
 
 
 # --- 데이터 모델 ---
-class Point:
-    def __init__(self, lat: float, lon: float):
-        self.lat = lat
-        self.lon = lon
-
-
 class HazardCategory(str, Enum):
     """위험구역 카테고리"""
 
