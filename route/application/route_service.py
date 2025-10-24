@@ -5,11 +5,7 @@ from typing import List, Dict, Optional
 from route.domain.route import Route
 from route.domain.repository.route_repo import RouteRepository
 from report.domain.repository.report_repo import ReportRepository
-from route.algorithms.safe_path_finder import (
-    build_graph,
-    astar_graph,
-    Point,
-)
+from route.algorithms.safe_path_finder import build_graph, astar_graph
 from config import get_settings
 
 
@@ -68,8 +64,8 @@ class RouteService:
         graph = build_graph(base_lines, hazards)
 
         # A* 기반 위험 회피 경로 생성
-        start = Point(origin_lat, origin_lng)
-        end = Point(dest_lat, dest_lng)
+        start = (origin_lat, origin_lng)
+        end = (dest_lat, dest_lng)
         safe_path = astar_graph(graph, start, end)
 
         return safe_path
