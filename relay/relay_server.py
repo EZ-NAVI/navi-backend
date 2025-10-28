@@ -9,44 +9,46 @@ connections = {}  # user_id → websocket
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    try:
-        # RabbitMQ 연결
-        connection = await aio_pika.connect_robust("amqp://guest:guest@rabbitmq/")
-        print("Connected to RabbitMQ")
+    connection = None
+    for attempt in range(10):  # 10번까지 재시도 (약 30초)
+        try:
+            connection = await aio_pika.connect_robust("amqp://guest:guest@rabbitmq/")
+            print("Connected to RabbitMQ")
+            break
+        except Exception as e:
+            await asyncio.sleep(3)
+    else:
+        raise RuntimeError("RabbitMQ connection failed after retries")
 
-        channel = await connection.channel()
-        exchange = await channel.declare_exchange(
-            "navi.events", aio_pika.ExchangeType.TOPIC
-        )
+    channel = await connection.channel()
+    exchange = await channel.declare_exchange(
+        "navi.events", aio_pika.ExchangeType.TOPIC
+    )
 
-        async def setup_queue(routing_key: str):
-            queue = await channel.declare_queue("", exclusive=True)
-            await queue.bind(exchange, routing_key)
-            print(f"Bound to {routing_key}")
+    async def setup_queue(routing_key: str):
+        queue = await channel.declare_queue("", exclusive=True)
+        await queue.bind(exchange, routing_key)
+        print(f"Bound to {routing_key}")
 
-            async def handler(message):
-                async with message.process():
-                    data = json.loads(message.body)
-                    print(f"Received from RabbitMQ ({routing_key}):", data)
-                    target_id = data.get("parentId") or data.get("childId")
-                    if target_id in connections:
-                        await connections[target_id].send_json(data)
-                        print(f"Sent to {target_id}: {data}")
+        async def handler(message):
+            async with message.process():
+                data = json.loads(message.body)
+                print(f"Received from RabbitMQ ({routing_key}):", data)
+                target_id = data.get("parentId") or data.get("childId")
+                if target_id in connections:
+                    await connections[target_id].send_json(data)
+                    print(f"Sent to {target_id}")
 
-            asyncio.create_task(queue.consume(handler))
+        asyncio.create_task(queue.consume(handler))
 
-        # 두 개 라우팅키 동시 구독
-        for rk in ["report.created", "report.reviewed"]:
-            asyncio.create_task(setup_queue(rk))
+    for rk in ["report.created", "report.reviewed"]:
+        asyncio.create_task(setup_queue(rk))
 
-    except Exception as e:
-        print(f"Relay lifespan init failed: {e}")
-        raise
-
-    yield  # 앱이 실행 중일 때 lifespan 유지됨
-
-    await connection.close()
-    print("RabbitMQ connection closed")
+    yield
+    print("🧹 Relay server shutting down...")
+    if connection:
+        await connection.close()
+        print("RabbitMQ connection closed")
 
 
 app = FastAPI(title="NAVI Relay Server", lifespan=lifespan)
