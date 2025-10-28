@@ -81,10 +81,7 @@ class RouteService:
             return flat_path
 
         # 위험구역 객체 변환
-        hazard_objs = [
-            Hazard(h.location_lat, h.location_lng, h.category, score=1.0)
-            for h in hazards
-        ]
+        hazard_objs = hazards
 
         # 그래프 구성
         graph = build_graph(base_lines, hazard_objs)
