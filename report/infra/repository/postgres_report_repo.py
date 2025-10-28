@@ -76,6 +76,17 @@ class PostgresReportRepository(ReportRepository):
             db.refresh(db_report)
             return ReportVO.from_orm(db_report)
 
+    def update_status(self, report: ReportDB):
+        with SessionLocal() as db:
+            db_report = db.query(ReportDB).filter(ReportDB.report_id == report.report_id).first()
+            if not db_report:
+                return None
+            db_report.status = report.status
+            db_report.updated_at = report.updated_at
+            db.commit()
+            db.refresh(db_report)
+            return db_report
+
     # PostGIS 기반 공간쿼리
     def find_nearby(self, origin_lat, origin_lng, dest_lat, dest_lng, buffer_m=2000):
         """출발/도착 중심점을 기준으로 반경 buffer_m 내 제보만 가져옴"""

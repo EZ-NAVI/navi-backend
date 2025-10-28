@@ -52,6 +52,28 @@ def create_report(
     )
     return report
 
+@router.post("/{report_id}/review")
+@inject
+def review_report(
+    report_id: str,
+    action: str = Body(..., embed=True, description="승인 또는 반려 ('approve' or 'reject')"),
+    service: ReportService = Depends(Provide[Container.report_service]),
+    current: CurrentUser = Depends(get_current_user),
+):
+    # 보호자 권한 확인
+    if current.user_type != "parent":
+        raise HTTPException(status_code=403, detail="보호자 계정만 접근 가능합니다.")
+
+    updated_report = service.review_report(report_id, current.id, action)
+    if not updated_report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    return {
+        "message": f"Report {action} 처리 완료",
+        "report_id": updated_report.report_id,
+        "status": updated_report.status,
+    }
+
 
 @router.get("/", response_model=List[Report])
 @inject
