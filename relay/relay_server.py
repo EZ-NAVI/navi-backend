@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI):
 
     # 기본 exchange 선언
     exchange = await channel.declare_exchange(
-        "navi_exchange", aio_pika.ExchangeType.TOPIC
+        "navi.events", aio_pika.ExchangeType.TOPIC
     )
 
     for routing_key in ["report.created", "report.reviewed"]:

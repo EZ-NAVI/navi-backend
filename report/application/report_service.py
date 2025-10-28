@@ -90,7 +90,6 @@ class ReportService:
                     "description": saved.description,
                     "imageUrl": saved.image_url,
                 },
-                exchange="navi_exchange",
             )
 
         return saved
@@ -147,7 +146,6 @@ class ReportService:
                 "childId": child.user_id,
                 "status": updated.status,
             },
-            exchange="navi_exchange",
         )
 
         return updated
