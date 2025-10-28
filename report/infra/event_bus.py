@@ -15,7 +15,7 @@ class EventBus:
             self._connection = await aio_pika.connect_robust(self.amqp_url)
             self._channel = await self._connection.channel()
             self._exchange = await self._channel.declare_exchange(
-                "navi.events", aio_pika.ExchangeType.TOPIC
+                "navi.events", aio_pika.ExchangeType.TOPIC, durable=True
             )
 
     async def publish(self, routing_key: str, message: dict):
