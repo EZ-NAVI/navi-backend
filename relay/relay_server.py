@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
 
     for routing_key in ["report.created", "report.reviewed"]:
         # 큐 선언 및 바인딩
-        queue = await channel.declare_queue(routing_key, durable=True)
+        queue = await channel.declare_queue("", exclusive=True)
         await queue.bind(exchange, routing_key)
         print(f"Subscribed to {routing_key}")
 
