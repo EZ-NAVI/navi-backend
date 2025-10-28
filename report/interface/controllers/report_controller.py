@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Path
 from dependency_injector.wiring import inject, Provide
 from pydantic import BaseModel
 from containers import Container
@@ -33,15 +33,21 @@ class PresignedResponse(BaseModel):
     file_url: str
 
 
+class ReportUpdateRequest(BaseModel):
+    image_url: str | None = None
+    category: str | None = None
+    description: str | None = None
+
+
 @router.post("/", response_model=Report)
 @inject
-def create_report(
+async def create_report(
     req: ReportCreateRequest = Body(...),
     service: ReportService = Depends(Provide[Container.report_service]),
     current: CurrentUser = Depends(get_current_user),
 ):
     logger.info(f"신고 생성 요청 uid={current.id}")
-    report = service.create_report(
+    report = await service.create_report(
         reporter_id=current.id,
         reporter_type=current.user_type,
         location_lat=req.location_lat,
@@ -52,11 +58,14 @@ def create_report(
     )
     return report
 
+
 @router.post("/{report_id}/review")
 @inject
-def review_report(
+async def review_report(
     report_id: str,
-    action: str = Body(..., embed=True, description="승인 또는 반려 ('approve' or 'reject')"),
+    action: str = Body(
+        ..., embed=True, description="승인 또는 반려 ('approve' or 'reject')"
+    ),
     service: ReportService = Depends(Provide[Container.report_service]),
     current: CurrentUser = Depends(get_current_user),
 ):
@@ -64,7 +73,7 @@ def review_report(
     if current.user_type != "parent":
         raise HTTPException(status_code=403, detail="보호자 계정만 접근 가능합니다.")
 
-    updated_report = service.review_report(report_id, current.id, action)
+    updated_report = await service.review_report(report_id, current.id, action)
     if not updated_report:
         raise HTTPException(status_code=404, detail="Report not found")
 
@@ -129,3 +138,32 @@ def filter_reports(
     service: ReportService = Depends(Provide[Container.report_service]),
 ):
     return service.get_reports_by_cluster_and_category(cluster_id, category)
+
+
+@router.patch("/{report_id}")
+@inject
+async def update_report(
+    report_id: str = Path(...),
+    req: ReportUpdateRequest = Body(...),
+    service: ReportService = Depends(Provide[Container.report_service]),
+    current: CurrentUser = Depends(get_current_user),
+):
+    updated = await service.update_report(
+        report_id=report_id,
+        requester_id=current.id,
+        image_url=req.image_url,
+        category=req.category,
+        description=req.description,
+    )
+    return updated
+
+
+@router.delete("/{report_id}")
+@inject
+async def delete_report(
+    report_id: str = Path(...),
+    service: ReportService = Depends(Provide[Container.report_service]),
+    current: CurrentUser = Depends(get_current_user),
+):
+    result = await service.delete_report(report_id=report_id, requester_id=current.id)
+    return result

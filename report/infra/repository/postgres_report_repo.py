@@ -42,19 +42,19 @@ class PostgresReportRepository(ReportRepository):
                 db.delete(report)
                 db.commit()
 
-
     def find_all(self):
         with SessionLocal() as db:
-            query = text("""
+            query = text(
+                """
                 SELECT DISTINCT ON (cluster_id) *
                 FROM report
                 WHERE cluster_id IS NOT NULL
                 ORDER BY cluster_id, created_at DESC
-            """)
+            """
+            )
             result = db.execute(query).mappings().all()
 
             return [ReportVO(**dict(row)) for row in result]
-
 
     def update_feedback_counts(self, report: ReportVO) -> ReportVO:
         with SessionLocal() as db:
@@ -78,7 +78,11 @@ class PostgresReportRepository(ReportRepository):
 
     def update_status(self, report: ReportDB):
         with SessionLocal() as db:
-            db_report = db.query(ReportDB).filter(ReportDB.report_id == report.report_id).first()
+            db_report = (
+                db.query(ReportDB)
+                .filter(ReportDB.report_id == report.report_id)
+                .first()
+            )
             if not db_report:
                 return None
             db_report.status = report.status
@@ -86,6 +90,28 @@ class PostgresReportRepository(ReportRepository):
             db.commit()
             db.refresh(db_report)
             return db_report
+
+    def update(self, report: ReportVO) -> ReportVO:
+        """제보 전체 정보 수정 (description, category, image_url 포함)"""
+        with SessionLocal() as db:
+            db_report = (
+                db.query(ReportDB)
+                .filter(ReportDB.report_id == report.report_id)
+                .first()
+            )
+            if not db_report:
+                return None
+
+            # 수정 가능한 필드 반영
+            db_report.category = report.category
+            db_report.description = report.description
+            db_report.image_url = report.image_url
+            db_report.status = report.status
+            db_report.updated_at = report.updated_at
+
+            db.commit()
+            db.refresh(db_report)
+            return ReportVO.from_orm(db_report)
 
     # PostGIS 기반 공간쿼리
     def find_nearby(self, origin_lat, origin_lng, dest_lat, dest_lng, buffer_m=2000):
@@ -195,7 +221,9 @@ class PostgresReportRepository(ReportRepository):
         with SessionLocal() as db:
             reports = (
                 db.query(ReportDB)
-                .filter(ReportDB.cluster_id == cluster_id, ReportDB.category == category)
+                .filter(
+                    ReportDB.cluster_id == cluster_id, ReportDB.category == category
+                )
                 .order_by(ReportDB.created_at.desc())
                 .all()
             )
