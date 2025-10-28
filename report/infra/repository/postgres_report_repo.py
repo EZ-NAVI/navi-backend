@@ -122,11 +122,12 @@ class PostgresReportRepository(ReportRepository):
                 SELECT report_id, location_lat, location_lng, category,
                     good_count, normal_count, bad_count, total_feedbacks
                 FROM report
-                WHERE ST_DWithin(
-                    geography(ST_MakePoint(location_lng, location_lat)),
-                    geography(ST_MakePoint(:center_lng, :center_lat)),
-                    :buffer
-                )
+                WHERE status = 'APPROVED'
+                  AND ST_DWithin(
+                      geography(ST_MakePoint(location_lng, location_lat)),
+                      geography(ST_MakePoint(:center_lng, :center_lat)),
+                      :buffer
+                  )
             """
             )
 
