@@ -35,13 +35,13 @@ class PresignedResponse(BaseModel):
 
 @router.post("/", response_model=Report)
 @inject
-def create_report(
+async def create_report(
     req: ReportCreateRequest = Body(...),
     service: ReportService = Depends(Provide[Container.report_service]),
     current: CurrentUser = Depends(get_current_user),
 ):
     logger.info(f"신고 생성 요청 uid={current.id}")
-    report = service.create_report(
+    report = await service.create_report(
         reporter_id=current.id,
         reporter_type=current.user_type,
         location_lat=req.location_lat,
@@ -52,11 +52,14 @@ def create_report(
     )
     return report
 
+
 @router.post("/{report_id}/review")
 @inject
-def review_report(
+async def review_report(
     report_id: str,
-    action: str = Body(..., embed=True, description="승인 또는 반려 ('approve' or 'reject')"),
+    action: str = Body(
+        ..., embed=True, description="승인 또는 반려 ('approve' or 'reject')"
+    ),
     service: ReportService = Depends(Provide[Container.report_service]),
     current: CurrentUser = Depends(get_current_user),
 ):
@@ -64,7 +67,7 @@ def review_report(
     if current.user_type != "parent":
         raise HTTPException(status_code=403, detail="보호자 계정만 접근 가능합니다.")
 
-    updated_report = service.review_report(report_id, current.id, action)
+    updated_report = await service.review_report(report_id, current.id, action)
     if not updated_report:
         raise HTTPException(status_code=404, detail="Report not found")
 
