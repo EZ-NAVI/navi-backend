@@ -6,26 +6,31 @@ import asyncio
 class EventBus:
     def __init__(self, amqp_url: str = "amqp://guest:guest@rabbitmq/"):
         self.amqp_url = amqp_url
+        self._connection = None
+        self._channel = None
+        self._exchange = None
 
     async def connect(self):
-        self.connection = await aio_pika.connect_robust(self.amqp_url)
-        self.channel = await self.connection.channel()
+        if not self._connection or self._connection.is_closed:
+            self._connection = await aio_pika.connect_robust(self.amqp_url)
+            self._channel = await self._connection.channel()
+            self._exchange = await self._channel.declare_exchange(
+                "navi.events", aio_pika.ExchangeType.TOPIC
+            )
 
-    async def publish(self, event_name: str, message: dict):
-        if not hasattr(self, "channel"):
-            await self.connect()
-
+    async def publish(self, routing_key: str, message: dict):
+        await self.connect()
         body = json.dumps(message).encode("utf-8")
-        await self.channel.default_exchange.publish(
+        await self._exchange.publish(
             aio_pika.Message(body=body),
-            routing_key=event_name,
+            routing_key=routing_key,
         )
 
-    async def consume(self, event_name: str, callback):
-        if not hasattr(self, "channel"):
-            await self.connect()
-
-        queue = await self.channel.declare_queue(event_name, durable=True)
+    async def consume(self, routing_key: str, callback):
+        await self.connect()
+        # 임시 큐 생성 (자동 삭제)
+        queue = await self._channel.declare_queue("", exclusive=True)
+        await queue.bind(self._exchange, routing_key)
 
         async for message in queue:
             async with message.process():
