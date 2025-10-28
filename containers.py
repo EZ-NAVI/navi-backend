@@ -14,6 +14,7 @@ from report.infra.repository.postgres_report_not_there_repo import (
     PostgresReportNotThereRepository,
 )
 from utils.crypto import Crypto
+from report.infra.event_bus import EventBus
 
 
 class Container(containers.DeclarativeContainer):
@@ -35,6 +36,8 @@ class Container(containers.DeclarativeContainer):
 
     crypto = providers.Singleton(Crypto)
 
+    event_bus = providers.Singleton(EventBus)
+
     user_service = providers.Factory(
         UserService,
         repo=user_repo,
@@ -45,6 +48,7 @@ class Container(containers.DeclarativeContainer):
         ReportService,
         repo=report_repo,
         user_repo=user_repo,
+        event_bus=event_bus,
     )
 
     report_comment_service = providers.Factory(
@@ -57,7 +61,6 @@ class Container(containers.DeclarativeContainer):
         repo=report_not_there_repo,
         report_repo=report_repo,
     )
-
 
     route_service = providers.Factory(
         RouteService,
