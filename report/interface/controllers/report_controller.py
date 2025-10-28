@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Path
 from dependency_injector.wiring import inject, Provide
 from pydantic import BaseModel
 from containers import Container
@@ -31,6 +31,12 @@ class ReportCreateRequest(BaseModel):
 class PresignedResponse(BaseModel):
     upload_url: str
     file_url: str
+
+
+class ReportUpdateRequest(BaseModel):
+    image_url: str | None = None
+    category: str | None = None
+    description: str | None = None
 
 
 @router.post("/", response_model=Report)
@@ -132,3 +138,32 @@ def filter_reports(
     service: ReportService = Depends(Provide[Container.report_service]),
 ):
     return service.get_reports_by_cluster_and_category(cluster_id, category)
+
+
+@router.patch("/{report_id}")
+@inject
+async def update_report(
+    report_id: str = Path(...),
+    req: ReportUpdateRequest = Body(...),
+    service: ReportService = Depends(Provide[Container.report_service]),
+    current: CurrentUser = Depends(get_current_user),
+):
+    updated = await service.update_report(
+        report_id=report_id,
+        requester_id=current.id,
+        image_url=req.image_url,
+        category=req.category,
+        description=req.description,
+    )
+    return updated
+
+
+@router.delete("/{report_id}")
+@inject
+async def delete_report(
+    report_id: str = Path(...),
+    service: ReportService = Depends(Provide[Container.report_service]),
+    current: CurrentUser = Depends(get_current_user),
+):
+    result = await service.delete_report(report_id=report_id, requester_id=current.id)
+    return result

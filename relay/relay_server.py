@@ -61,7 +61,7 @@ async def startup_event():
 
         asyncio.create_task(queue.consume(handler, no_ack=False))
 
-    for rk in ["report.created", "report.reviewed"]:
+    for rk in ["report.created", "report.reviewed", "report.updated", "report.deleted"]:
         asyncio.create_task(setup_queue(rk))
 
 

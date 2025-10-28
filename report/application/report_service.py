@@ -5,7 +5,6 @@ from typing import List
 from uuid import uuid4
 import ulid
 import math
-import asyncio
 
 from user.domain.repository.user_repo import UserRepository
 from report.domain.report import Report
@@ -196,3 +195,121 @@ class ReportService:
 
     def get_reports_by_cluster_and_category(self, cluster_id: str, category: str):
         return self.repo.find_by_cluster_and_category(cluster_id, category)
+
+
+async def update_report(
+    self,
+    report_id: str,
+    requester_id: str,
+    image_url: str | None = None,
+    category: str | None = None,
+    description: str | None = None,
+) -> Report:
+    report = self.repo.get(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="제보를 찾을 수 없습니다.")
+
+    if report.reporter_id != requester_id:
+        raise HTTPException(status_code=403, detail="수정 권한이 없습니다.")
+
+    if report.status != "REJECTED":
+        raise HTTPException(status_code=400, detail="반려된 제보만 수정할 수 있습니다.")
+
+    if image_url is not None:
+        report.image_url = image_url
+    if category is not None:
+        report.category = category
+    if description is not None:
+        report.description = description
+
+    report.status = "PENDING"
+    report.updated_at = datetime.now(timezone.utc)
+
+    updated = self.repo.update_status(report)
+
+    child = self.user_repo.get(requester_id)
+    if child and child.parent_id:
+        await self.event_bus.publish(
+            "report.updated",
+            {
+                "reportId": updated.report_id,
+                "parentId": child.parent_id,
+                "childId": child.user_id,
+                "category": updated.category,
+                "description": updated.description,
+                "imageUrl": updated.image_url,
+            },
+        )
+
+    return updated
+
+
+async def update_report(
+    self,
+    report_id: str,
+    requester_id: str,
+    image_url: str | None = None,
+    category: str | None = None,
+    description: str | None = None,
+) -> Report:
+    report = self.repo.get(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="제보를 찾을 수 없습니다.")
+
+    if report.reporter_id != requester_id:
+        raise HTTPException(status_code=403, detail="수정 권한이 없습니다.")
+
+    if report.status != "REJECTED":
+        raise HTTPException(status_code=400, detail="반려된 제보만 수정할 수 있습니다.")
+
+    if image_url is not None:
+        report.image_url = image_url
+    if category is not None:
+        report.category = category
+    if description is not None:
+        report.description = description
+
+    report.status = "PENDING"
+    report.updated_at = datetime.now(timezone.utc)
+
+    updated = self.repo.update_status(report)
+
+    child = self.user_repo.get(requester_id)
+    if child and child.parent_id:
+        await self.event_bus.publish(
+            "report.updated",
+            {
+                "reportId": updated.report_id,
+                "parentId": child.parent_id,
+                "childId": child.user_id,
+                "category": updated.category,
+                "description": updated.description,
+                "imageUrl": updated.image_url,
+            },
+        )
+
+    return updated
+
+
+async def delete_report(self, report_id: str, requester_id: str):
+    report = self.repo.get(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="제보를 찾을 수 없습니다.")
+
+    if report.reporter_id != requester_id:
+        raise HTTPException(status_code=403, detail="삭제 권한이 없습니다.")
+
+    deleted_id = self.repo.delete(report_id)
+
+    child = self.user_repo.get(requester_id)
+    if child and child.parent_id:
+        await self.event_bus.publish(
+            "report.deleted",
+            {
+                "reportId": report.report_id,
+                "parentId": child.parent_id,
+                "childId": child.user_id,
+            },
+        )
+
+    return {"deleted": True, "report_id": deleted_id}
