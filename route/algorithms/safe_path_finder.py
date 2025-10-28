@@ -122,7 +122,7 @@ def astar_graph(graph, start: Tuple[float, float], goal: Tuple[float, float]):
     while open_set:
         _, current = heapq.heappop(open_set)
 
-        # 도착 기준: 20m 이내
+        # 도착 기준: 100m 이내
         if haversine(current[0], current[1], goal[0], goal[1]) < 100:
             return reconstruct_path(came_from, current, start, goal)
 
