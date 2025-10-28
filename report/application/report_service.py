@@ -226,7 +226,7 @@ class ReportService:
         report.status = "PENDING"
         report.updated_at = datetime.now(timezone.utc)
 
-        updated = self.repo.save(report)
+        updated = self.repo.update_status(report)
 
         child = self.user_repo.get(requester_id)
         if child and child.parent_id:
