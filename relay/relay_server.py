@@ -52,7 +52,9 @@ async def startup_event():
                         f"⚠️ {target_id} not connected — message kept in queue",
                         flush=True,
                     )
+                    await asyncio.sleep(5)
                     await message.reject(requeue=True)
+
             except Exception as e:
                 print(f"Handler error: {e}", flush=True)
                 await message.reject(requeue=True)
