@@ -38,7 +38,7 @@ async def startup_event():
         print(f"Bound to {routing_key}", flush=True)
 
         async def handler(message):
-            async with message.process():
+            try:
                 data = json.loads(message.body)
                 print(f"Received ({routing_key}): {data}", flush=True)
                 target_id = data.get("parentId") or data.get("childId")
@@ -46,14 +46,16 @@ async def startup_event():
                 if target_id in connections:
                     await connections[target_id].send_json(data)
                     print(f"Sent to {target_id}", flush=True)
+                    await message.ack()
                 else:
-                    # 연결 안 되어 있으면 ack하지 않고 메시지 유지
-                    await asyncio.sleep(0.5)
-                    await message.reject(requeue=True)
                     print(
                         f"⚠️ {target_id} not connected — message kept in queue",
                         flush=True,
                     )
+                    await message.reject(requeue=True)
+            except Exception as e:
+                print(f"Handler error: {e}", flush=True)
+                await message.reject(requeue=True)
 
         asyncio.create_task(queue.consume(handler, no_ack=False))
 
