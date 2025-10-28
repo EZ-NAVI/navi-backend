@@ -11,6 +11,7 @@ app = FastAPI(title="NAVI Relay Server")
 async def startup_event():
     print("⚡ Relay server startup_event fired!", flush=True)
 
+    connection = None
     for attempt in range(10):
         try:
             connection = await aio_pika.connect_robust("amqp://guest:guest@rabbitmq/")
@@ -27,11 +28,12 @@ async def startup_event():
 
     channel = await connection.channel()
     exchange = await channel.declare_exchange(
-        "navi.events", aio_pika.ExchangeType.TOPIC
+        "navi.events", aio_pika.ExchangeType.TOPIC, durable=True
     )
 
     async def setup_queue(routing_key: str):
-        queue = await channel.declare_queue("", exclusive=True)
+        queue_name = f"relay.{routing_key}"  # 큐 이름 고정
+        queue = await channel.declare_queue(queue_name, durable=True)
         await queue.bind(exchange, routing_key)
         print(f"Bound to {routing_key}", flush=True)
 
@@ -40,11 +42,20 @@ async def startup_event():
                 data = json.loads(message.body)
                 print(f"Received ({routing_key}): {data}", flush=True)
                 target_id = data.get("parentId") or data.get("childId")
+
                 if target_id in connections:
                     await connections[target_id].send_json(data)
                     print(f"Sent to {target_id}", flush=True)
+                else:
+                    # 연결 안 되어 있으면 ack하지 않고 메시지 유지
+                    await asyncio.sleep(0.5)
+                    await message.reject(requeue=True)
+                    print(
+                        f"⚠️ {target_id} not connected — message kept in queue",
+                        flush=True,
+                    )
 
-        asyncio.create_task(queue.consume(handler))
+        asyncio.create_task(queue.consume(handler, no_ack=False))
 
     for rk in ["report.created", "report.reviewed"]:
         asyncio.create_task(setup_queue(rk))
