@@ -2,6 +2,7 @@ from typing import List, Dict, Tuple
 from enum import Enum
 import heapq
 import math
+from common.logger import logger
 
 
 # --- 데이터 모델 ---
@@ -47,6 +48,15 @@ def haversine(lat1, lon1, lat2, lon2):
         + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
     )
     return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+
+def snap_to_nearest_node(graph, point):
+    """그래프의 노드 중 point와 가장 가까운 노드를 반환"""
+    if not graph:
+        return point
+    nodes = list(graph.keys())
+    nearest = min(nodes, key=lambda n: haversine(point[0], point[1], n[0], n[1]))
+    return nearest
 
 
 def segment_circle_intersect(p1, p2, center, radius):
@@ -113,7 +123,7 @@ def astar_graph(graph, start: Tuple[float, float], goal: Tuple[float, float]):
         _, current = heapq.heappop(open_set)
 
         # 도착 기준: 20m 이내
-        if haversine(current[0], current[1], goal[0], goal[1]) < 20:
+        if haversine(current[0], current[1], goal[0], goal[1]) < 100:
             return reconstruct_path(came_from, current, start, goal)
 
         for neighbor, weight in graph.get(current, []):
@@ -127,6 +137,7 @@ def astar_graph(graph, start: Tuple[float, float], goal: Tuple[float, float]):
                 heapq.heappush(open_set, (f_score, neighbor))
                 came_from[neighbor] = current
 
+    logger.info(f"A* failed: explored {len(g_score)} nodes but no path reached goal")
     return []
 
 
