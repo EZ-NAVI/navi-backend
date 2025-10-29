@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from containers import Container
-from firebase import init_firebase
+from report.infra.firebase import init_firebase
 
 init_firebase()
 

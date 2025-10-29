@@ -9,6 +9,8 @@ import math
 from user.domain.repository.user_repo import UserRepository
 from report.domain.report import Report
 from report.domain.repository.report_repo import ReportRepository
+from report.infra.firebase import init_firebase, send_push
+
 
 CLUSTER_RADIUS = 500
 
