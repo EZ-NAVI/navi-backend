@@ -42,6 +42,10 @@ class UserResponse(User):
     matched: bool
 
 
+class FcmTokenRequest(BaseModel):
+    fcm_token: str
+
+
 @router.post("/register", response_model=MessageResponse, dependencies=[])
 @inject
 def register_user(
@@ -76,13 +80,28 @@ def login_user(
     return TokenResponse(access_token=access_token)
 
 
-@router.get(
-    "/me", response_model=UserResponse, dependencies=[Depends(get_current_user)]
-)
+@router.post("/fcm-token", response_model=MessageResponse)
+@inject
+def register_fcm_token(
+    req: FcmTokenRequest,
+    current: CurrentUser = Depends(get_current_user),
+    service: UserService = Depends(Provide[Container.user_service]),
+):
+    fcm_token = req.fcm_token.strip()
+    if not fcm_token:
+        raise HTTPException(status_code=400, detail="fcm_token is required")
+
+    updated_user = service.register_fcm_token(current.user_id, fcm_token)
+
+    logger.info(f"FCM 토큰 등록 완료 uid={current.user_id}")
+    return {"message": "FCM token registered"}
+
+
+@router.get("/me", response_model=UserResponse)
 @inject
 def get_current_user_info(
-    service: UserService = Depends(Provide[Container.user_service]),
     current: CurrentUser = Depends(get_current_user),  # JWT 인증 사용
+    service: UserService = Depends(Provide[Container.user_service]),
 ):
     user = service.get(current.user_id)
     if not user:

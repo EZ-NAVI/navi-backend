@@ -7,6 +7,7 @@ from user.domain.user import User
 from user.domain.repository.user_repo import UserRepository
 from utils.crypto import Crypto
 from common.auth import create_access_token, Role
+from common.logger import logger
 
 
 class UserService:
@@ -78,3 +79,21 @@ class UserService:
             children = self.repo.find_children_by_parent_id(user.user_id)
             return len(children) > 0
         return False
+
+    def register_fcm_token(self, user_id: str, fcm_token: str) -> User:
+        """유저의 FCM 토큰을 등록하거나 갱신"""
+        user = self.repo.get(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # 같은 토큰이면 굳이 DB 업데이트 안함 (불필요한 커밋 방지)
+        if user.fcm_token == fcm_token:
+            logger.info(f"FCM 토큰 이미 최신 상태 uid={user_id}")
+            return user
+
+        user.fcm_token = fcm_token
+        user.updated_at = datetime.now(timezone.utc)
+
+        updated = self.repo.save(user)
+        logger.info(f"FCM 토큰 등록 완료 uid={user_id}")
+        return updated
