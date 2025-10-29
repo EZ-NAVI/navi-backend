@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     # TMap
     tmap_app_key: str
 
+    # Firebase
+    firebase_key_path: str
+
 
 @lru_cache
 def get_settings():

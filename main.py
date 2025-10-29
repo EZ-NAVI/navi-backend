@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from containers import Container
+from firebase import init_firebase
+
+init_firebase()
 
 from user.interface.controllers.user_controller import router as user_router
 from report.interface.controllers.report_controller import router as report_router
