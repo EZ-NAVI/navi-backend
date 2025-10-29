@@ -14,6 +14,8 @@ from report.infra.firebase import init_firebase, send_push
 
 CLUSTER_RADIUS = 500
 
+init_firebase()  # 앱 시작 시 한 번만 초기화
+
 
 class ReportService:
     def __init__(self, repo: ReportRepository, user_repo: UserRepository, event_bus):
@@ -79,8 +81,17 @@ class ReportService:
 
         saved = self.repo.save(report)
 
-        # 자녀가 제보 생성 → 부모에게 실시간 이벤트 발행
+        # 자녀가 제보 생성 → 부모에게 실시간 이벤트 발행 및 푸시 전송
         if user.user_type == "child" and user.parent_id:
+            parent = self.user_repo.get(user.parent_id)
+            if parent and getattr(parent, "fcm_token", None):
+                send_push(
+                    token=parent.fcm_token,
+                    title="제보 등록 알림",
+                    body="자녀가 새로운 제보를 등록했어요. 확인해보세요.",
+                    data={"reportId": saved.report_id},
+                )
+
             await self.event_bus.publish(
                 "report.created",
                 {
@@ -133,13 +144,29 @@ class ReportService:
             report.status = "REJECTED"
         else:
             raise HTTPException(
-                status_code=400, detail="잘못된 action 값입니다. (approve/reject)"
+                status_code=400, detail="잘못된 action 값입니다. (승인/반려)"
             )
 
         report.updated_at = datetime.now(timezone.utc)
         updated = self.repo.update_status(report)
 
-        # 부모가 승인/반려 → 자녀에게 실시간 이벤트 발행
+        # 부모가 승인/반려 → 자녀에게 실시간 이벤트 발행 및 푸시 전송
+        if child and getattr(child, "fcm_token", None):
+            if updated.status == "APPROVED":
+                send_push(
+                    token=child.fcm_token,
+                    title="제보 승인 알림",
+                    body="부모님이 제보를 승인했어요. 등록된 제보는 안전한 경로에 반영될 거예요!",
+                    data={"reportId": updated.report_id},
+                )
+            elif updated.status == "REJECTED":
+                send_push(
+                    token=child.fcm_token,
+                    title="제보 승인 알림",
+                    body="부모님이 제보를 반려했어요. 내용을 수정해보세요!",
+                    data={"reportId": updated.report_id},
+                )
+
         await self.event_bus.publish(
             "report.reviewed",
             {
@@ -230,8 +257,18 @@ class ReportService:
 
         updated = self.repo.update(report)
 
+        # 자녀가 반려된 제보를 수정 시 → 부모에게 실시간 이벤트 발행 및 푸시 전송
         child = self.user_repo.get(requester_id)
         if child and child.parent_id:
+            parent = self.user_repo.get(child.parent_id)
+            if parent and getattr(parent, "fcm_token", None):
+                send_push(
+                    token=parent.fcm_token,
+                    title="제보 수정 알림",
+                    body="자녀가 반려된 제보를 수정했어요. 다시 검토해보세요.",
+                    data={"reportId": updated.report_id},
+                )
+
             await self.event_bus.publish(
                 "report.updated",
                 {
@@ -256,8 +293,18 @@ class ReportService:
 
         deleted_id = self.repo.delete(report_id)
 
+        # 자녀가 반려된 제보 삭제 시 → 부모에게 실시간 이벤트 발행 및 푸시 전송
         child = self.user_repo.get(requester_id)
         if child and child.parent_id:
+            parent = self.user_repo.get(child.parent_id)
+            if parent and getattr(parent, "fcm_token", None):
+                send_push(
+                    token=parent.fcm_token,
+                    title="제보 삭제 알림",
+                    body="자녀가 제보를 삭제했어요. 새로운 제보를 위해 격려해주세요.",
+                    data={"reportId": report_id},
+                )
+
             await self.event_bus.publish(
                 "report.deleted",
                 {
