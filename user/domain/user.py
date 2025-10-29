@@ -14,7 +14,7 @@ class User(BaseModel):
     created_at: Optional[datetime] = Field(None, alias="createdAt")
     updated_at: Optional[datetime] = Field(None, alias="updatedAt")
     password: Optional[str] = None
-
+    fcm_token: Optional[str] = None
     model_config = ConfigDict(
         populate_by_name=True,  # snake_case로도 값 넣을 수 있음
         from_attributes=True,
