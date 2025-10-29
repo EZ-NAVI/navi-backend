@@ -315,3 +315,12 @@ class ReportService:
             )
 
         return {"deleted": True, "report_id": deleted_id}
+
+    def register_fcm_token(self, user_id: str, fcm_token: str):
+        user = self.repo.get(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        user.fcm_token = fcm_token
+        updated = self.repo.save(user)
+        return updated
