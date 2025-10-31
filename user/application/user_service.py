@@ -40,13 +40,35 @@ class UserService:
             name=name,
             email=email,
             phone=phone,
-            parent_id=parent_id,
             birth_year=birth_year,
             password=self.crypto.encrypt(password),
             created_at=now,
             updated_at=now,
         )
-        return self.repo.save(user)
+
+        saved = self.repo.save(user)
+
+        # 자녀 → 부모 매칭
+        if user_type == "child":
+            parent = self.repo.find_parent_candidate(
+                name=name, email=email, phone=phone, birth_year=birth_year
+            )
+            if parent:
+                saved.parent_id = parent.user_id
+                saved.updated_at = datetime.now(timezone.utc)
+                saved = self.repo.save(saved)
+
+        # 부모 → 자녀 매칭
+        elif user_type == "parent":
+            child = self.repo.find_child_candidate(
+                name=name, email=email, phone=phone, birth_year=birth_year
+            )
+            if child:
+                child.parent_id = saved.user_id
+                child.updated_at = datetime.now(timezone.utc)
+                self.repo.save(child)
+
+        return saved
 
     def login(self, email: str, password: str) -> str:
         user = self.repo.find_by_email(email)
