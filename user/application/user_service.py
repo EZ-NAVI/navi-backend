@@ -22,8 +22,9 @@ class UserService:
         email: str,
         phone: str,
         password: str,
-        parent_id: Optional[str] = None,
         birth_year: Optional[int] = None,
+        parent_info: Optional[dict] = None,
+        child_info: Optional[dict] = None,
     ) -> User:
         # 이메일 중복 체크
         existing = self.repo.find_by_email(email)
@@ -49,9 +50,12 @@ class UserService:
         saved = self.repo.save(user)
 
         # 자녀 → 부모 매칭
-        if user_type == "child":
+        if user_type == "child" and parent_info:
             parent = self.repo.find_parent_candidate(
-                name=name, email=email, phone=phone, birth_year=birth_year
+                name=parent_info.get("name"),
+                email=parent_info.get("email"),
+                phone=parent_info.get("phone"),
+                birth_year=parent_info.get("birth_year"),
             )
             if parent:
                 saved.parent_id = parent.user_id
@@ -59,9 +63,12 @@ class UserService:
                 saved = self.repo.save(saved)
 
         # 부모 → 자녀 매칭
-        elif user_type == "parent":
+        elif user_type == "parent" and child_info:
             child = self.repo.find_child_candidate(
-                name=name, email=email, phone=phone, birth_year=birth_year
+                name=child_info.get("name"),
+                email=child_info.get("email"),
+                phone=child_info.get("phone"),
+                birth_year=child_info.get("birth_year"),
             )
             if child:
                 child.parent_id = saved.user_id
