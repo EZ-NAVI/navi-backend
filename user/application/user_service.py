@@ -22,8 +22,9 @@ class UserService:
         email: str,
         phone: str,
         password: str,
-        parent_id: Optional[str] = None,
         birth_year: Optional[int] = None,
+        parent_info: Optional[dict] = None,
+        child_info: Optional[dict] = None,
     ) -> User:
         # 이메일 중복 체크
         existing = self.repo.find_by_email(email)
@@ -40,13 +41,41 @@ class UserService:
             name=name,
             email=email,
             phone=phone,
-            parent_id=parent_id,
             birth_year=birth_year,
             password=self.crypto.encrypt(password),
             created_at=now,
             updated_at=now,
         )
-        return self.repo.save(user)
+
+        saved = self.repo.save(user)
+
+        # 자녀 → 부모 매칭
+        if user_type == "child" and parent_info:
+            parent = self.repo.find_parent_candidate(
+                name=parent_info.get("name"),
+                email=parent_info.get("email"),
+                phone=parent_info.get("phone"),
+                birth_year=parent_info.get("birth_year"),
+            )
+            if parent:
+                saved.parent_id = parent.user_id
+                saved.updated_at = datetime.now(timezone.utc)
+                saved = self.repo.save(saved)
+
+        # 부모 → 자녀 매칭
+        elif user_type == "parent" and child_info:
+            child = self.repo.find_child_candidate(
+                name=child_info.get("name"),
+                email=child_info.get("email"),
+                phone=child_info.get("phone"),
+                birth_year=child_info.get("birth_year"),
+            )
+            if child:
+                child.parent_id = saved.user_id
+                child.updated_at = datetime.now(timezone.utc)
+                self.repo.save(child)
+
+        return saved
 
     def login(self, email: str, password: str) -> str:
         user = self.repo.find_by_email(email)

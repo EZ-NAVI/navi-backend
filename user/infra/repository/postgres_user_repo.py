@@ -60,3 +60,36 @@ class PostgresUserRepository(UserRepository):
         with SessionLocal() as db:
             users = db.query(UserDB).filter(UserDB.parent_id == parent_id).all()
             return [UserVO.model_validate(u) for u in users]
+
+    def find_parent_candidate(
+        self, name: str, email: str, phone: str, birth_year: int
+    ) -> UserVO | None:
+        """이름, 이메일, 전화번호, 생년월일이 일치하는 부모 찾기"""
+        with SessionLocal() as db:
+            parent = (
+                db.query(UserDB)
+                .filter(UserDB.user_type == "parent")
+                .filter(UserDB.name == name)
+                .filter(UserDB.email == email)
+                .filter(UserDB.phone == phone)
+                .filter(UserDB.birth_year == birth_year)
+                .first()
+            )
+            return UserVO.model_validate(parent) if parent else None
+
+    def find_child_candidate(
+        self, name: str, email: str, phone: str, birth_year: int
+    ) -> UserVO | None:
+        """이름, 이메일, 전화번호, 생년월일이 일치하고 parent_id가 비어 있는 자녀 찾기"""
+        with SessionLocal() as db:
+            child = (
+                db.query(UserDB)
+                .filter(UserDB.user_type == "child")
+                .filter(UserDB.parent_id.is_(None))
+                .filter(UserDB.name == name)
+                .filter(UserDB.email == email)
+                .filter(UserDB.phone == phone)
+                .filter(UserDB.birth_year == birth_year)
+                .first()
+            )
+            return UserVO.model_validate(child) if child else None

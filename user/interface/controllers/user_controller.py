@@ -20,8 +20,11 @@ class UserRegisterRequest(BaseModel):
     email: EmailStr
     phone: str
     password: str
-    parent_id: Optional[str] = None
     birth_year: Optional[int] = None
+
+    # 매칭용 정보 (DB에는 저장되지 않음)
+    parent_info: Optional[dict] = None
+    child_info: Optional[dict] = None
 
 
 class UserLoginRequest(BaseModel):
@@ -59,7 +62,6 @@ def register_user(
         email=req.email,
         phone=req.phone,
         password=req.password,
-        parent_id=req.parent_id,
         birth_year=req.birth_year,
     )
     logger.info(f"회원가입 성공 uid={user.user_id}")
