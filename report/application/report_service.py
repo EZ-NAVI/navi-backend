@@ -18,10 +18,17 @@ init_firebase()  # 앱 시작 시 한 번만 초기화
 
 
 class ReportService:
-    def __init__(self, repo: ReportRepository, user_repo: UserRepository, event_bus):
+    def __init__(
+        self,
+        repo: ReportRepository,
+        user_repo: UserRepository,
+        event_bus,
+        evaluating_repo=None,
+    ):
         self.repo = repo
         self.user_repo = user_repo
         self.event_bus = event_bus
+        self.evaluating_repo = evaluating_repo
 
     async def create_report(
         self,
@@ -106,8 +113,22 @@ class ReportService:
 
         return saved
 
-    def get_report(self, report_id: str) -> Report | None:
-        return self.repo.get(report_id)
+    def get_report(self, report_id: str, user_id: str | None = None):
+        report = self.repo.get(report_id)
+        if not report:
+            raise HTTPException(status_code=404, detail="Report not found")
+
+        # 이 사용자의 평가 여부 조회
+        user_evaluation = None
+        if user_id and self.evaluating_repo:
+            existing = self.evaluating_repo.find_user_evaluating(report_id, user_id)
+            if existing:
+                user_evaluation = existing.evaluation
+
+        # 기존 ReportVO → dict로 변환하고 추가 필드 붙이기
+        report_data = report.model_dump(by_alias=True)
+        report_data["userEvaluation"] = user_evaluation
+        return report_data
 
     def list_reports(self) -> List[Report]:
         return self.repo.find_all()
