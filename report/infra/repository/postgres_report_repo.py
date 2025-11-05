@@ -229,3 +229,24 @@ class PostgresReportRepository(ReportRepository):
                 .all()
             )
             return [ReportVO.from_orm(r) for r in reports]
+
+    def increment_feedback(self, report_id: str, evaluation: str):
+        """좋음/보통/아쉬움 평가 카운트 업데이트"""
+        with SessionLocal() as db:
+            report = db.query(Report).filter(Report.report_id == report_id).first()
+            if not report:
+                return
+
+            # 평가별 카운트 증가
+            if evaluation == "GOOD":
+                report.good_count += 1
+            elif evaluation == "NORMAL":
+                report.normal_count += 1
+            elif evaluation == "BAD":
+                report.bad_count += 1
+
+            # 전체 피드백 수 증가
+            report.total_feedbacks += 1
+
+            db.commit()
+            db.refresh(report)
