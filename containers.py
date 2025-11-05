@@ -29,6 +29,7 @@ class Container(containers.DeclarativeContainer):
             "report.interface.controllers.report_controller",
             "report.interface.controllers.report_comment_controller",
             "report.interface.controllers.report_not_there_controller",
+            "report.interface.controllers.report_evaluating_controller",
             "route.interface.controllers.route_controller",
         ]
     )

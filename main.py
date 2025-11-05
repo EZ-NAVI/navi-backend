@@ -13,6 +13,9 @@ from report.interface.controllers.report_comment_controller import (
 from report.interface.controllers.report_not_there_controller import (
     router as report_not_there_router,
 )
+from report.interface.controllers.report_evaluating_controller import (
+    router as report_evaluating_router,
+)
 from route.interface.controllers.route_controller import router as route_router
 
 app = FastAPI(title="NAVI Backend", version="0.1.0")
@@ -30,6 +33,7 @@ app.include_router(user_router)
 app.include_router(report_router)
 app.include_router(report_comment_router)
 app.include_router(report_not_there_router)
+app.include_router(report_evaluating_router)
 app.include_router(route_router)
 
 

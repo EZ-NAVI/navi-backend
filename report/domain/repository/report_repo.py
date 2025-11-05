@@ -37,6 +37,17 @@ class ReportRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def find_by_cluster_and_category(self, cluster_id: str, category: str) -> List[Report]:
+    def find_by_cluster_and_category(
+        self, cluster_id: str, category: str
+    ) -> List[Report]:
         raise NotImplementedError
 
+    @abstractmethod
+    def increment_feedback(self, report_id: str, evaluation: str):
+        """평가 카운트 증가"""
+        raise NotImplementedError
+
+    @abstractmethod
+    def decrement_feedback(self, report_id: str, evaluation: str):
+        """평가 카운트 감소"""
+        raise NotImplementedError
