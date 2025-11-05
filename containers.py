@@ -13,6 +13,11 @@ from report.application.report_not_there_service import ReportNotThereService
 from report.infra.repository.postgres_report_not_there_repo import (
     PostgresReportNotThereRepository,
 )
+from report.application.report_evaluating_service import ReportEvaluatingService
+from report.infra.repository.postgres_report_evaluating_repo import (
+    PostgresReportEvaluatingRepository,
+)
+
 from utils.crypto import Crypto
 from report.infra.event_bus import EventBus
 
@@ -32,6 +37,7 @@ class Container(containers.DeclarativeContainer):
     report_repo = providers.Singleton(PostgresReportRepository)
     report_comment_repo = providers.Singleton(PostgresReportCommentRepository)
     report_not_there_repo = providers.Singleton(PostgresReportNotThereRepository)
+    report_evaluating_repo = providers.Factory(PostgresReportEvaluatingRepository)
     route_repo = providers.Singleton(PostgresRouteRepository)
 
     crypto = providers.Singleton(Crypto)
@@ -60,6 +66,12 @@ class Container(containers.DeclarativeContainer):
         ReportNotThereService,
         repo=report_not_there_repo,
         report_repo=report_repo,
+    )
+
+    report_evaluating_service = providers.Factory(
+        ReportEvaluatingService,
+        report_repo=report_repo,
+        evaluating_repo=report_evaluating_repo,
     )
 
     route_service = providers.Factory(
