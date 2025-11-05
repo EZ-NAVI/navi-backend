@@ -20,9 +20,12 @@ class Report(BaseModel):
     status: str = "pending"
 
     good_count: Optional[int] = Field(0, alias="goodCount")  # 이모지는 '아쉬움'
-    normal_count: Optional[int] = Field(0, alias="normalCount") # 이모지는 '보통'
-    bad_count: Optional[int] = Field(0, alias="badCount") # 이모지는 '좋음'
+    normal_count: Optional[int] = Field(0, alias="normalCount")  # 이모지는 '보통'
+    bad_count: Optional[int] = Field(0, alias="badCount")  # 이모지는 '좋음'
     total_feedbacks: Optional[int] = Field(0, alias="totalFeedbacks")
+
+    # 사용자의 평가 종류 (good/normal/bad/null)
+    user_evaluation: Optional[str] = Field(None, alias="userEvaluation")
 
     not_there: Optional[int] = Field(None, alias="notThere")
     created_at: Optional[datetime] = Field(None, alias="createdAt")

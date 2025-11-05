@@ -56,6 +56,7 @@ class Container(containers.DeclarativeContainer):
         repo=report_repo,
         user_repo=user_repo,
         event_bus=event_bus,
+        evaluating_repo=report_evaluating_repo,
     )
 
     report_comment_service = providers.Factory(
