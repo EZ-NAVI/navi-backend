@@ -238,11 +238,11 @@ class PostgresReportRepository(ReportRepository):
                 return
 
             # 평가별 카운트 증가
-            if evaluation == "GOOD":
+            if evaluation == "good":
                 report.good_count += 1
-            elif evaluation == "NORMAL":
+            elif evaluation == "normal":
                 report.normal_count += 1
-            elif evaluation == "BAD":
+            elif evaluation == "bad":
                 report.bad_count += 1
 
             # 전체 피드백 수 증가
@@ -259,11 +259,11 @@ class PostgresReportRepository(ReportRepository):
                 return
 
             # 평가별 카운트 감소
-            if evaluation == "GOOD" and report.good_count > 0:
+            if evaluation == "good" and report.good_count > 0:
                 report.good_count -= 1
-            elif evaluation == "NORMAL" and report.normal_count > 0:
+            elif evaluation == "normal" and report.normal_count > 0:
                 report.normal_count -= 1
-            elif evaluation == "BAD" and report.bad_count > 0:
+            elif evaluation == "bad" and report.bad_count > 0:
                 report.bad_count -= 1
 
             # 전체 피드백 수 감소
