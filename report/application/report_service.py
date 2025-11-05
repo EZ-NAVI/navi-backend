@@ -119,16 +119,13 @@ class ReportService:
             raise HTTPException(status_code=404, detail="Report not found")
 
         # 이 사용자의 평가 여부 조회
-        user_evaluation = None
         if user_id and self.evaluating_repo:
             existing = self.evaluating_repo.find_user_evaluating(report_id, user_id)
-            if existing:
-                user_evaluation = existing.evaluation
+            report.user_evaluation = existing.evaluation if existing else None
+        else:
+            report.user_evaluation = None
 
-        # 기존 ReportVO → dict로 변환하고 추가 필드 붙이기
-        report_data = report.model_dump(by_alias=True)
-        report_data["userEvaluation"] = user_evaluation
-        return report_data
+        return report
 
     def list_reports(self) -> List[Report]:
         return self.repo.find_all()
