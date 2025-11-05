@@ -97,8 +97,9 @@ def list_reports(
 def get_report(
     report_id: str,
     service: ReportService = Depends(Provide[Container.report_service]),
+    current: CurrentUser = Depends(get_current_user),
 ):
-    report = service.get_report(report_id)
+    report = service.get_report(report_id, current.id if current else None)
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
     return report
