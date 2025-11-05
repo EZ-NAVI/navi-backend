@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Enum, ForeignKey, UniqueConstraint, DateTime
-from datetime import datetime
+from datetime import datetime, timezone
 from database import Base
 import enum
 
@@ -15,9 +15,11 @@ class ReportEvaluating(Base):
 
     id = Column(String, primary_key=True)
     report_id = Column(String, ForeignKey("report.report_id"), nullable=False)
-    user_id = Column(String, ForeignKey("user.user_id"), nullable=False)
+    user_id = Column(String, ForeignKey("users.user_id"), nullable=False)
     evaluation = Column(Enum(EvaluationType), nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime, default=datetime.now(timezone.utc), onupdate=datetime.utcnow
+    )
 
     __table_args__ = (UniqueConstraint("report_id", "user_id", name="uix_report_user"),)
