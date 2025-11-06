@@ -48,8 +48,8 @@ oauth2_scheme = HTTPBearer(scheme_name="BearerAuth")
 
 
 class CurrentUser:
-    def __init__(self, id: str, role: Role, user_type: str | None = None):
-        self.id = id
+    def __init__(self, user_id: str, role: Role, user_type: str | None = None):
+        self.user_id = user_id
         self.role = role
         self.user_type = user_type
 
