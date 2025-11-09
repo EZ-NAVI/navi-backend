@@ -22,7 +22,7 @@ async def evaluate_report(
     ),
     current: CurrentUser = Depends(get_current_user),
 ):
-    result = await service.evaluate_report(report_id, current.id, req.evaluation)
+    result = await service.evaluate_report(report_id, current.uid, req.evaluation)
     return {
         "message": f"이모지 평가가 {result['action']} 되었습니다.",
         "reportId": result["report_id"],

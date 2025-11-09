@@ -46,9 +46,9 @@ async def create_report(
     service: ReportService = Depends(Provide[Container.report_service]),
     current: CurrentUser = Depends(get_current_user),
 ):
-    logger.info(f"신고 생성 요청 uid={current.id}")
+    logger.info(f"신고 생성 요청 uid={current.uid}")
     report = await service.create_report(
-        reporter_id=current.id,
+        reporter_id=current.uid,
         reporter_type=current.user_type,
         location_lat=req.location_lat,
         location_lng=req.location_lng,
@@ -73,7 +73,7 @@ async def review_report(
     if current.user_type != "parent":
         raise HTTPException(status_code=403, detail="보호자 계정만 접근 가능합니다.")
 
-    updated_report = await service.review_report(report_id, current.id, action)
+    updated_report = await service.review_report(report_id, current.uid, action)
     if not updated_report:
         raise HTTPException(status_code=404, detail="Report not found")
 
@@ -99,7 +99,7 @@ def get_report(
     service: ReportService = Depends(Provide[Container.report_service]),
     current: CurrentUser = Depends(get_current_user),
 ):
-    report = service.get_report(report_id, current.id if current else None)
+    report = service.get_report(report_id, current.uid if current else None)
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
     return report
@@ -151,7 +151,7 @@ async def update_report(
 ):
     updated = await service.update_report(
         report_id=report_id,
-        requester_id=current.id,
+        requester_id=current.uid,
         image_url=req.image_url,
         category=req.category,
         description=req.description,
@@ -166,5 +166,5 @@ async def delete_report(
     service: ReportService = Depends(Provide[Container.report_service]),
     current: CurrentUser = Depends(get_current_user),
 ):
-    result = await service.delete_report(report_id=report_id, requester_id=current.id)
+    result = await service.delete_report(report_id=report_id, requester_id=current.uid)
     return result
