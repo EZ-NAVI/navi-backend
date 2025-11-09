@@ -39,6 +39,11 @@ class ReportUpdateRequest(BaseModel):
     description: str | None = None
 
 
+class FilterResponse(BaseModel):
+    total_count: int
+    reports: List[Report]
+
+
 @router.get("/presigned-url", response_model=PresignedResponse, dependencies=[])
 def get_presigned_url(
     file_name: str = Query(..., description="파일 이름 (예: photo.jpg)"),
@@ -76,7 +81,7 @@ def get_latest_reports_by_cluster(
     return service.get_latest_reports_by_cluster()
 
 
-@router.get("/filter", response_model=List[Report])
+@router.get("/filter", response_model=FilterResponse)
 @inject
 def filter_reports(
     cluster_id: str = Query(..., description="클러스터 ID"),
@@ -85,11 +90,9 @@ def filter_reports(
 ):
     """
     특정 클러스터 내 제보 리스트 조회
-    - cluster_id는 필수
-    - category를 지정하면 필터링
-    - total_count 필드로 해당 클러스터 내 제보 총 개수 반환
     """
-    return service.get_reports_by_cluster_and_category(cluster_id, category)
+    reports = service.get_reports_by_cluster_and_category(cluster_id, category)
+    return {"total_count": len(reports), "reports": reports}
 
 
 @router.get("/", response_model=List[Report])
