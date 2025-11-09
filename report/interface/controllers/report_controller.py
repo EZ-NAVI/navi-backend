@@ -14,7 +14,7 @@ from common.logger import logger
 router = APIRouter(
     prefix="/reports",
     tags=["reports"],
-    dependencies=[Depends(get_current_user)],  # 모든 API 인증 필요
+    dependencies=[Depends(get_current_user)],
 )
 
 settings = get_settings()
@@ -37,72 +37,6 @@ class ReportUpdateRequest(BaseModel):
     image_url: str | None = None
     category: str | None = None
     description: str | None = None
-
-
-@router.post("/", response_model=Report)
-@inject
-async def create_report(
-    req: ReportCreateRequest = Body(...),
-    service: ReportService = Depends(Provide[Container.report_service]),
-    current: CurrentUser = Depends(get_current_user),
-):
-    logger.info(f"신고 생성 요청 uid={current.uid}")
-    report = await service.create_report(
-        reporter_id=current.uid,
-        reporter_type=current.user_type,
-        location_lat=req.location_lat,
-        location_lng=req.location_lng,
-        image_url=req.image_url,
-        category=req.category,
-        description=req.description,
-    )
-    return report
-
-
-@router.post("/{report_id}/review")
-@inject
-async def review_report(
-    report_id: str,
-    action: str = Body(
-        ..., embed=True, description="승인 또는 반려 ('approve' or 'reject')"
-    ),
-    service: ReportService = Depends(Provide[Container.report_service]),
-    current: CurrentUser = Depends(get_current_user),
-):
-    # 보호자 권한 확인
-    if current.user_type != "parent":
-        raise HTTPException(status_code=403, detail="보호자 계정만 접근 가능합니다.")
-
-    updated_report = await service.review_report(report_id, current.uid, action)
-    if not updated_report:
-        raise HTTPException(status_code=404, detail="Report not found")
-
-    return {
-        "message": f"Report {action} 처리 완료",
-        "report_id": updated_report.report_id,
-        "status": updated_report.status,
-    }
-
-
-@router.get("/", response_model=List[Report])
-@inject
-def list_reports(
-    service: ReportService = Depends(Provide[Container.report_service]),
-):
-    return service.list_reports()
-
-
-@router.get("/{report_id}", response_model=Report)
-@inject
-def get_report(
-    report_id: str,
-    service: ReportService = Depends(Provide[Container.report_service]),
-    current: CurrentUser = Depends(get_current_user),
-):
-    report = service.get_report(report_id, current.uid if current else None)
-    if not report:
-        raise HTTPException(status_code=404, detail="Report not found")
-    return report
 
 
 @router.get("/presigned-url", response_model=PresignedResponse, dependencies=[])
@@ -156,6 +90,72 @@ def filter_reports(
     - total_count 필드로 해당 클러스터 내 제보 총 개수 반환
     """
     return service.get_reports_by_cluster_and_category(cluster_id, category)
+
+
+@router.get("/", response_model=List[Report])
+@inject
+def list_reports(
+    service: ReportService = Depends(Provide[Container.report_service]),
+):
+    return service.list_reports()
+
+
+@router.post("/", response_model=Report)
+@inject
+async def create_report(
+    req: ReportCreateRequest = Body(...),
+    service: ReportService = Depends(Provide[Container.report_service]),
+    current: CurrentUser = Depends(get_current_user),
+):
+    logger.info(f"신고 생성 요청 uid={current.uid}")
+    report = await service.create_report(
+        reporter_id=current.uid,
+        reporter_type=current.user_type,
+        location_lat=req.location_lat,
+        location_lng=req.location_lng,
+        image_url=req.image_url,
+        category=req.category,
+        description=req.description,
+    )
+    return report
+
+
+@router.get("/{report_id}", response_model=Report)
+@inject
+def get_report(
+    report_id: str,
+    service: ReportService = Depends(Provide[Container.report_service]),
+    current: CurrentUser = Depends(get_current_user),
+):
+    report = service.get_report(report_id, current.uid if current else None)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    return report
+
+
+@router.post("/{report_id}/review")
+@inject
+async def review_report(
+    report_id: str,
+    action: str = Body(
+        ..., embed=True, description="승인 또는 반려 ('approve' or 'reject')"
+    ),
+    service: ReportService = Depends(Provide[Container.report_service]),
+    current: CurrentUser = Depends(get_current_user),
+):
+    # 보호자 권한 확인
+    if current.user_type != "parent":
+        raise HTTPException(status_code=403, detail="보호자 계정만 접근 가능합니다.")
+
+    updated_report = await service.review_report(report_id, current.uid, action)
+    if not updated_report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    return {
+        "message": f"Report {action} 처리 완료",
+        "report_id": updated_report.report_id,
+        "status": updated_report.status,
+    }
 
 
 @router.patch("/{report_id}")
