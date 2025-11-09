@@ -63,6 +63,8 @@ def register_user(
         phone=req.phone,
         password=req.password,
         birth_year=req.birth_year,
+        parent_info=req.parent_info,
+        child_info=req.child_info,
     )
     logger.info(f"회원가입 성공 uid={user.user_id}")
     return {"message": "User registered successfully"}
