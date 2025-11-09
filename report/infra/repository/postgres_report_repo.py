@@ -230,6 +230,17 @@ class PostgresReportRepository(ReportRepository):
             )
             return [ReportVO.from_orm(r) for r in reports]
 
+    def find_latest_per_cluster(self):
+        with SessionLocal() as db:
+            reports = (
+                db.query(ReportDB)
+                .filter(ReportDB.cluster_id.isnot(None))
+                .distinct(ReportDB.cluster_id)
+                .order_by(ReportDB.cluster_id, ReportDB.created_at.desc())
+                .all()
+            )
+            return [Report.model_validate(r) for r in reports]
+
     def increment_feedback(self, report_id: str, evaluation: str):
         """좋음/보통/아쉬움 평가 카운트 업데이트"""
         with SessionLocal() as db:
