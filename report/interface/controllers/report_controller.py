@@ -146,9 +146,15 @@ def get_latest_reports_by_cluster(
 @inject
 def filter_reports(
     cluster_id: str = Query(..., description="클러스터 ID"),
-    category: str = Query(..., description="카테고리"),
+    category: str | None = Query(None, description="카테고리 (선택)"),
     service: ReportService = Depends(Provide[Container.report_service]),
 ):
+    """
+    특정 클러스터 내 제보 리스트 조회
+    - cluster_id는 필수
+    - category를 지정하면 필터링
+    - total_count 필드로 해당 클러스터 내 제보 총 개수 반환
+    """
     return service.get_reports_by_cluster_and_category(cluster_id, category)
 
 

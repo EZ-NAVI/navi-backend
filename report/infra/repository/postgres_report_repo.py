@@ -218,17 +218,15 @@ class PostgresReportRepository(ReportRepository):
 
             return nearby_reports
 
-    def find_by_cluster_and_category(self, cluster_id: str, category: str):
+    def find_by_cluster_and_category(
+        self, cluster_id: str, category: str | None = None
+    ):
         with SessionLocal() as db:
-            reports = (
-                db.query(ReportDB)
-                .filter(
-                    ReportDB.cluster_id == cluster_id, ReportDB.category == category
-                )
-                .order_by(ReportDB.created_at.desc())
-                .all()
-            )
-            return [ReportVO.from_orm(r) for r in reports]
+            query = db.query(ReportDB).filter(ReportDB.cluster_id == cluster_id)
+            if category:
+                query = query.filter(ReportDB.category == category)
+            reports = query.order_by(ReportDB.created_at.desc()).all()
+            return [ReportVO.model_validate(r) for r in reports]
 
     def find_latest_per_cluster(self):
         with SessionLocal() as db:
@@ -239,7 +237,7 @@ class PostgresReportRepository(ReportRepository):
                 .order_by(ReportDB.cluster_id, ReportDB.created_at.desc())
                 .all()
             )
-            return [Report.model_validate(r) for r in reports]
+            return [ReportVO.model_validate(r) for r in reports]
 
     def increment_feedback(self, report_id: str, evaluation: str):
         """좋음/보통/아쉬움 평가 카운트 업데이트"""
