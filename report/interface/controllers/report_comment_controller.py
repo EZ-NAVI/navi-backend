@@ -28,8 +28,8 @@ def add_comment(
     service: ReportCommentService = Depends(Provide[Container.report_comment_service]),
     current: CurrentUser = Depends(get_current_user),
 ):
-    logger.info(f"댓글 생성 요청 uid={current.id}")
-    return service.add_comment(report_id, current.id, req.content)
+    logger.info(f"댓글 생성 요청 uid={current.uid}")
+    return service.add_comment(report_id, current.uid, req.content)
 
 
 @router.get("/", response_model=List[ReportComment])

@@ -49,12 +49,14 @@ oauth2_scheme = HTTPBearer(scheme_name="BearerAuth")
 
 class CurrentUser:
     def __init__(self, user_id: str, role: Role, user_type: str | None = None):
+        # 컨트롤러에서 uid로 접근 가능하게 통일
+        self.uid = user_id
         self.user_id = user_id
         self.role = role
         self.user_type = user_type
 
     def __str__(self):
-        return f"{self.id}({self.role}, type={self.user_type})"
+        return f"{self.uid}({self.role}, type={self.user_type})"
 
 
 def get_current_user(
