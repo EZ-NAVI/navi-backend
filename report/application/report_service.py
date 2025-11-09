@@ -240,8 +240,17 @@ class ReportService:
 
         return self.repo.update_feedback_counts(report)
 
-    def get_reports_by_cluster_and_category(self, cluster_id: str, category: str):
-        return self.repo.find_by_cluster_and_category(cluster_id, category)
+    def get_reports_by_cluster_and_category(
+        self, cluster_id: str, category: str | None = None
+    ):
+        reports = self.repo.find_by_cluster_and_category(cluster_id, category)
+        total_count = len(reports)
+
+        return {
+            "category": category,
+            "total_count": total_count,
+            "reports": reports,
+        }
 
     def get_latest_reports_by_cluster(self):
         return self.repo.find_latest_per_cluster()
