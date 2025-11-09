@@ -27,6 +27,11 @@ class UserRegisterRequest(BaseModel):
     child_info: Optional[dict] = None
 
 
+class RegisterResponse(BaseModel):
+    message: str
+    matched: bool
+
+
 class UserLoginRequest(BaseModel):
     email: EmailStr
     password: str
@@ -49,7 +54,7 @@ class FcmTokenRequest(BaseModel):
     fcm_token: str
 
 
-@router.post("/register", response_model=MessageResponse, dependencies=[])
+@router.post("/register", response_model=RegisterResponse, dependencies=[])
 @inject
 def register_user(
     req: UserRegisterRequest,
