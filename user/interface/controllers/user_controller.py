@@ -27,6 +27,11 @@ class UserRegisterRequest(BaseModel):
     child_info: Optional[dict] = None
 
 
+class RegisterResponse(BaseModel):
+    message: str
+    matched: bool
+
+
 class UserLoginRequest(BaseModel):
     email: EmailStr
     password: str
@@ -49,7 +54,7 @@ class FcmTokenRequest(BaseModel):
     fcm_token: str
 
 
-@router.post("/register", response_model=MessageResponse, dependencies=[])
+@router.post("/register", response_model=RegisterResponse, dependencies=[])
 @inject
 def register_user(
     req: UserRegisterRequest,
@@ -63,6 +68,8 @@ def register_user(
         phone=req.phone,
         password=req.password,
         birth_year=req.birth_year,
+        parent_info=req.parent_info,
+        child_info=req.child_info,
     )
     logger.info(f"회원가입 성공 uid={user.user_id}")
     return {"message": "User registered successfully"}
