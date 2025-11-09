@@ -131,6 +131,17 @@ def get_presigned_url(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/latest-by-cluster", response_model=List[Report])
+@inject
+def get_latest_reports_by_cluster(
+    service: ReportService = Depends(Provide[Container.report_service]),
+):
+    """
+    클러스터별로 최신 제보 1개씩만 반환
+    """
+    return service.get_latest_reports_by_cluster()
+
+
 @router.get("/filter", response_model=List[Report])
 @inject
 def filter_reports(

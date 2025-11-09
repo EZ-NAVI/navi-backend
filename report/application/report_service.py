@@ -243,6 +243,9 @@ class ReportService:
     def get_reports_by_cluster_and_category(self, cluster_id: str, category: str):
         return self.repo.find_by_cluster_and_category(cluster_id, category)
 
+    def get_latest_reports_by_cluster(self):
+        return self.repo.find_latest_per_cluster()
+
     async def update_report(
         self,
         report_id: str,
