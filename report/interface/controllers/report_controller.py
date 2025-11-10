@@ -123,7 +123,7 @@ async def create_report(
     return report
 
 
-@router.get("/{report_id}", response_model=Report)
+@router.get("/{report_id}")
 @inject
 def get_report(
     report_id: str,
@@ -133,7 +133,15 @@ def get_report(
     report = service.get_report(report_id, current.uid if current else None)
     if not report:
         raise HTTPException(status_code=404, detail="Report not found")
-    return report
+
+    # 내가 작성한 제보인지 확인
+    my_report = current and report.reporter_id == current.uid
+
+    # 반환 시 myReport 필드 추가
+    return {
+        **report.dict(by_alias=True),
+        "myReport": my_report,
+    }
 
 
 @router.post("/{report_id}/review")
