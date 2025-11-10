@@ -5,6 +5,7 @@ import ulid
 
 from user.domain.user import User
 from user.domain.repository.user_repo import UserRepository
+from user.application.consent_service import ConsentService
 from utils.crypto import Crypto
 from common.auth import create_access_token, Role
 from common.logger import logger
@@ -48,6 +49,12 @@ class UserService:
         )
 
         saved = self.repo.save(user)
+
+        consent_service = ConsentService()
+        default_codes = ["COMMON_INFO", "COMMON_LOCATION", "COMMON_PUSH"]
+        if user_type == "child":
+            default_codes.append("CHILD_GUARDIAN")
+        consent_service.create_user_consent(saved.user_id, default_codes)
 
         # 자녀 → 부모 매칭
         if user_type == "child" and parent_info:
