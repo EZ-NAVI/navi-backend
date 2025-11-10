@@ -13,30 +13,27 @@ class ConsentService:
         """회원가입 시 자동으로 필수 동의항목을 user_consent 테이블에 등록"""
         now = datetime.now(timezone.utc)
         expire_at = now + timedelta(days=365 * 3)
+        consent_data = {code: True for code in consent_codes}
 
         with SessionLocal() as db:
-            for code in consent_codes:
-                # 이미 등록된 항목은 중복 방지
-                exists = (
-                    db.query(UserConsent)
-                    .filter(UserConsent.user_id == user_id)
-                    .filter(UserConsent.consent_code == code)
-                    .first()
-                )
-                if exists:
-                    continue
+            # 이미 해당 유저의 동의 데이터가 존재하면 업데이트 대신 스킵
+            exists = (
+                db.query(UserConsent).filter(UserConsent.user_id == user_id).first()
+            )
+            if exists:
+                return True
 
-                consent = UserConsent(
-                    consent_id=str(ulid.new()),
-                    user_id=user_id,
-                    consent_code=code,
-                    consent_at=now,
-                    expire_at=expire_at,
-                    status="active",
-                    created_at=now,
-                    updated_at=now,
-                )
-                db.add(consent)
+            consent = UserConsent(
+                consent_id=str(ulid.new()),
+                user_id=user_id,
+                consent_data=consent_data,
+                consent_at=now,
+                expire_at=expire_at,
+                status="active",
+                created_at=now,
+                updated_at=now,
+            )
+            db.add(consent)
 
             db.commit()
         return True
