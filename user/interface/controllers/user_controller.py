@@ -72,7 +72,7 @@ def register_user(
         child_info=req.child_info,
     )
     logger.info(f"회원가입 성공 uid={user.user_id}")
-    return {"message": "User registered successfully"}
+    return {"message": "User registered successfully", "matched": False}
 
 
 @router.post("/login", response_model=TokenResponse, dependencies=[])
