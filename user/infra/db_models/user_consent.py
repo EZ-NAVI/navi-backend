@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, ForeignKey
+from sqlalchemy import Column, String, DateTime, ForeignKey, JSON
 from datetime import datetime, timedelta, timezone
 from database import Base
 
@@ -8,9 +8,7 @@ class UserConsent(Base):
 
     consent_id = Column(String, primary_key=True)
     user_id = Column(String, ForeignKey("users.user_id"), nullable=False)
-    consent_code = Column(
-        String, ForeignKey("consent_master.consent_code"), nullable=False
-    )
+    consent_data = Column(JSON, nullable=False)
     consent_at = Column(DateTime, default=datetime.now(timezone.utc), nullable=False)
     expire_at = Column(
         DateTime, default=lambda: datetime.now(timezone.utc) + timedelta(days=365 * 3)
