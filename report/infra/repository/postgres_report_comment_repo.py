@@ -13,19 +13,33 @@ class PostgresReportCommentRepository(ReportCommentRepository):
                 author_id=comment.user_id,
                 content=comment.content,
                 created_at=comment.created_at,
-                updated_at=comment.updated_at,
             )
             db.add(db_comment)
             db.commit()
             db.refresh(db_comment)
-            return CommentVO.from_orm(db_comment)
+            return CommentVO(
+                comment_id=db_comment.comment_id,
+                report_id=db_comment.report_id,
+                user_id=db_comment.author_id,
+                content=db_comment.content,
+                created_at=db_comment.created_at,
+            )
 
     def find_by_report_id(self, report_id: str):
         with SessionLocal() as db:
             comments = (
                 db.query(CommentDB).filter(CommentDB.report_id == report_id).all()
             )
-            return [CommentVO.from_orm(c) for c in comments]
+            return [
+                CommentVO(
+                    comment_id=c.comment_id,
+                    report_id=c.report_id,
+                    user_id=c.author_id,
+                    content=c.content,
+                    created_at=c.created_at,
+                )
+                for c in comments
+            ]
 
     def delete(self, comment_id: str):
         with SessionLocal() as db:
@@ -35,3 +49,16 @@ class PostgresReportCommentRepository(ReportCommentRepository):
             if comment:
                 db.delete(comment)
                 db.commit()
+
+    def find_by_id(self, comment_id: str) -> CommentVO | None:
+        with SessionLocal() as db:
+            c = db.query(CommentDB).filter(CommentDB.comment_id == comment_id).first()
+            if not c:
+                return None
+            return CommentVO(
+                comment_id=c.comment_id,
+                report_id=c.report_id,
+                user_id=c.author_id,
+                content=c.content,
+                created_at=c.created_at,
+            )

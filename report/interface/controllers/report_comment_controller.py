@@ -46,6 +46,7 @@ def list_comments(
 def delete_comment(
     comment_id: str,
     service: ReportCommentService = Depends(Provide[Container.report_comment_service]),
+    current: CurrentUser = Depends(get_current_user),
 ):
-    service.delete_comment(comment_id)
-    return {"message": "Comment deleted"}
+    service.delete_comment(comment_id, current.uid)
+    return {"message": "댓글이 삭제되었습니다."}
