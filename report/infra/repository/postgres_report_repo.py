@@ -32,8 +32,13 @@ class PostgresReportRepository(ReportRepository):
 
     def get(self, report_id: str) -> ReportVO | None:
         with SessionLocal() as db:
-            report = db.query(ReportDB).filter(ReportDB.report_id == report_id).first()
-            return ReportVO.from_orm(report) if report else None
+            report = (
+                db.query(ReportDB)
+                .filter(ReportDB.report_id == report_id)
+                .filter(ReportDB.status == "APPROVED")
+                .first()
+            )
+        return ReportVO.from_orm(report) if report else None
 
     def delete(self, report_id: str) -> None:
         with SessionLocal() as db:
@@ -49,12 +54,12 @@ class PostgresReportRepository(ReportRepository):
                 SELECT DISTINCT ON (cluster_id) *
                 FROM report
                 WHERE cluster_id IS NOT NULL
+                AND status = 'APPROVED'
                 ORDER BY cluster_id, created_at DESC
-            """
+                """
             )
-            result = db.execute(query).mappings().all()
-
-            return [ReportVO(**dict(row)) for row in result]
+        result = db.execute(query).mappings().all()
+        return [ReportVO(**dict(row)) for row in result]
 
     def update_feedback_counts(self, report: ReportVO) -> ReportVO:
         with SessionLocal() as db:
@@ -177,7 +182,8 @@ class PostgresReportRepository(ReportRepository):
                 """
                 SELECT *
                 FROM report
-                WHERE ST_DWithin(
+                WHERE status = 'APPROVED'
+                AND ST_DWithin(
                     geography(ST_MakePoint(location_lng, location_lat)),
                     geography(ST_MakePoint(:lng, :lat)),
                     :radius
@@ -222,7 +228,10 @@ class PostgresReportRepository(ReportRepository):
         self, cluster_id: str, category: str | None = None
     ):
         with SessionLocal() as db:
-            query = db.query(ReportDB).filter(ReportDB.cluster_id == cluster_id)
+            query = db.query(ReportDB).filter(
+                ReportDB.cluster_id == cluster_id,
+                ReportDB.status == "APPROVED",
+            )
             if category:
                 query = query.filter(ReportDB.category == category)
             reports = query.order_by(ReportDB.created_at.desc()).all()
@@ -232,10 +241,11 @@ class PostgresReportRepository(ReportRepository):
         with SessionLocal() as db:
             query = text(
                 """
-                SELECT DISTINCT ON (cluster_id) *
-                FROM report
-                WHERE cluster_id IS NOT NULL
-                ORDER BY cluster_id, created_at DESC
+            SELECT DISTINCT ON (cluster_id) *
+            FROM report
+            WHERE cluster_id IS NOT NULL
+              AND status = 'APPROVED'
+            ORDER BY cluster_id, created_at DESC
             """
             )
             rows = db.execute(query).mappings().all()
