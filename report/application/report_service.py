@@ -55,6 +55,9 @@ class ReportService:
         # 제보 객체 생성
         now = datetime.now(timezone.utc)
 
+        # 부모는 바로 승인 처리
+        status = "APPROVED" if user.user_type == "parent" else "PENDING"
+
         # 반경 500m 이내 기존 제보 조회
         nearby_reports = self.repo.find_nearby_reports(
             lat=location_lat, lng=location_lng, radius_m=CLUSTER_RADIUS
@@ -76,7 +79,7 @@ class ReportService:
             image_url=image_url,
             category=category,
             description=description,
-            status="PENDING",
+            status=status,
             good_count=0,
             normal_count=0,
             bad_count=0,
