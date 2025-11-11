@@ -32,12 +32,7 @@ class PostgresReportRepository(ReportRepository):
 
     def get(self, report_id: str) -> ReportVO | None:
         with SessionLocal() as db:
-            report = (
-                db.query(ReportDB)
-                .filter(ReportDB.report_id == report_id)
-                .filter(ReportDB.status == "APPROVED")
-                .first()
-            )
+            report = db.query(ReportDB).filter(ReportDB.report_id == report_id).first()
         return ReportVO.from_orm(report) if report else None
 
     def delete(self, report_id: str) -> None:
