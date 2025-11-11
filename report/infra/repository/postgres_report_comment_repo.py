@@ -13,7 +13,6 @@ class PostgresReportCommentRepository(ReportCommentRepository):
                 author_id=comment.user_id,
                 content=comment.content,
                 created_at=comment.created_at,
-                updated_at=comment.updated_at,
             )
             db.add(db_comment)
             db.commit()

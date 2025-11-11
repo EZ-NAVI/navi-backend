@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, DateTime, ForeignKey
-from datetime import datetime
+from datetime import datetime, timezone
 from database import Base
 
 
@@ -10,5 +10,4 @@ class ReportComment(Base):
     report_id = Column(String, ForeignKey("report.report_id"), nullable=False)
     author_id = Column(String, nullable=False)
     content = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now(timezone.utc))

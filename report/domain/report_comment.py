@@ -9,7 +9,6 @@ class ReportComment(BaseModel):
     user_id: str = Field(..., alias="userId")
     content: str
     created_at: Optional[datetime] = Field(None, alias="createdAt")
-    updated_at: Optional[datetime] = Field(None, alias="updatedAt")
 
     model_config = ConfigDict(
         populate_by_name=True,

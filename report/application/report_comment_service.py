@@ -16,7 +16,6 @@ class ReportCommentService:
             user_id=user_id,
             content=content,
             created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
         )
         return self.repo.save(comment)
 
