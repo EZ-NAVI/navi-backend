@@ -49,3 +49,16 @@ class PostgresReportCommentRepository(ReportCommentRepository):
             if comment:
                 db.delete(comment)
                 db.commit()
+
+    def find_by_id(self, comment_id: str) -> CommentVO | None:
+        with SessionLocal() as db:
+            c = db.query(CommentDB).filter(CommentDB.comment_id == comment_id).first()
+            if not c:
+                return None
+            return CommentVO(
+                comment_id=c.comment_id,
+                report_id=c.report_id,
+                user_id=c.author_id,
+                content=c.content,
+                created_at=c.created_at,
+            )
