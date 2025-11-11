@@ -17,14 +17,29 @@ class PostgresReportCommentRepository(ReportCommentRepository):
             db.add(db_comment)
             db.commit()
             db.refresh(db_comment)
-            return CommentVO.from_orm(db_comment)
+            return CommentVO(
+                comment_id=db_comment.comment_id,
+                report_id=db_comment.report_id,
+                user_id=db_comment.author_id,
+                content=db_comment.content,
+                created_at=db_comment.created_at,
+            )
 
     def find_by_report_id(self, report_id: str):
         with SessionLocal() as db:
             comments = (
                 db.query(CommentDB).filter(CommentDB.report_id == report_id).all()
             )
-            return [CommentVO.from_orm(c) for c in comments]
+            return [
+                CommentVO(
+                    comment_id=c.comment_id,
+                    report_id=c.report_id,
+                    user_id=c.author_id,
+                    content=c.content,
+                    created_at=c.created_at,
+                )
+                for c in comments
+            ]
 
     def delete(self, comment_id: str):
         with SessionLocal() as db:
