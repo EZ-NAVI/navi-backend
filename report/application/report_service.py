@@ -79,7 +79,7 @@ class ReportService:
             image_url=image_url,
             category=category,
             description=description,
-            status="PENDING",
+            status=status,
             good_count=0,
             normal_count=0,
             bad_count=0,
