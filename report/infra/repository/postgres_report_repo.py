@@ -70,6 +70,7 @@ class PostgresReportRepository(ReportRepository):
             db_report.normal_count = report.normal_count
             db_report.bad_count = report.bad_count
             db_report.total_feedbacks = report.total_feedbacks
+            db_report.not_there = report.not_there
             db_report.updated_at = report.updated_at
 
             db.commit()
