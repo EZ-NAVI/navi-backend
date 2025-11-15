@@ -59,6 +59,7 @@ def get_presigned_url(
                 "Bucket": settings.aws_s3_bucket_name,
                 "Key": key,
                 "ContentType": file_type,
+                "ACL": "public-read",
             },
             ExpiresIn=3600,
         )
