@@ -5,6 +5,7 @@ from report.domain.report_not_there import ReportNotThere
 from report.domain.repository.report_not_there_repo import ReportNotThereRepository
 from report.domain.repository.report_repo import ReportRepository
 
+
 class ReportNotThereService:
     def __init__(self, repo: ReportNotThereRepository, report_repo: ReportRepository):
         self.repo = repo
@@ -12,7 +13,9 @@ class ReportNotThereService:
 
     def mark_not_there(self, report_id: str, user_id: str):
         if self.repo.has_user_marked(report_id, user_id):
-            raise HTTPException(status_code=400, detail="이미 '이제 없어요'를 누른 제보입니다.")
+            raise HTTPException(
+                status_code=400, detail="이미 '이제 없어요'를 누른 제보입니다."
+            )
 
         record = ReportNotThere(
             id=str(ulid.new()),
@@ -20,6 +23,8 @@ class ReportNotThereService:
             user_id=user_id,
             created_at=datetime.now(timezone.utc),
         )
+        self.repo.save(record)
+
         # 제보 조회
         report = self.report_repo.get(report_id)
         if not report:
@@ -35,4 +40,7 @@ class ReportNotThereService:
 
         # 그렇지 않으면 카운트만 업데이트
         self.report_repo.update_feedback_counts(report)
-        return {"message": "'이제 없어요'가 반영되었습니다.", "notThere": report.not_there}
+        return {
+            "message": "'이제 없어요'가 반영되었습니다.",
+            "notThere": report.not_there,
+        }
