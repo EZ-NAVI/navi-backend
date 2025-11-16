@@ -40,6 +40,7 @@ async def startup_event():
         async def handler(message):
             try:
                 data = json.loads(message.body)
+                data["eventType"] = routing_key
                 print(f"Received ({routing_key}): {data}", flush=True)
                 target_id = data.get("parentId") or data.get("childId")
 
