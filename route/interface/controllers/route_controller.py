@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Body, Depends
 from dependency_injector.wiring import inject, Provide
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Dict, Optional
 from containers import Container
 from route.application.route_service import RouteService
@@ -16,13 +16,17 @@ class RoutePreviewRequest(BaseModel):
     dest_lng: float
 
 
+class PreviewResponse(BaseModel):
+    path: List[Dict[str, float]]
+
+
 class RouteCreateRequest(RoutePreviewRequest):
     duration: int
     path_data: List[Dict[str, float]]
 
 
-class RouteResponse(BaseModel):
-    route_id: Optional[str] = None
+class SaveResponse(BaseModel):
+    route_id: str = Field(..., alias="routeId")
     path: List[Dict[str, float]]
 
 
@@ -31,7 +35,7 @@ class RouteEvaluationRequest(BaseModel):
 
 
 # 경로 미리보기 (저장 안 함)
-@router.post("/preview", response_model=RouteResponse)
+@router.post("/preview", response_model=PreviewResponse)
 @inject
 def preview_route(
     req: RoutePreviewRequest = Body(...),
@@ -43,11 +47,11 @@ def preview_route(
         dest_lat=req.dest_lat,
         dest_lng=req.dest_lng,
     )
-    return RouteResponse(path=path)
+    return PreviewResponse(path=path)
 
 
 # 실제 이동 후 저장
-@router.post("/", response_model=RouteResponse)
+@router.post("/", response_model=SaveResponse)
 @inject
 def save_route(
     req: RouteCreateRequest = Body(...),
@@ -63,7 +67,7 @@ def save_route(
         duration=req.duration,
         path_data=req.path_data,
     )
-    return RouteResponse(route_id=route.route_id, path=route.path_data)
+    return SaveResponse(route_id=route.route_id, path=route.path_data)
 
 
 # 이동 후 평가 (별점 등록)
