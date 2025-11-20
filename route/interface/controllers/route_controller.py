@@ -59,7 +59,7 @@ def save_route(
     current: CurrentUser = Depends(get_current_user),
 ):
     route = service.save_route_if_traveled(
-        user_id=current.id,
+        user_id=current.uid,
         origin_lat=req.origin_lat,
         origin_lng=req.origin_lng,
         dest_lat=req.dest_lat,
@@ -67,7 +67,9 @@ def save_route(
         duration=req.duration,
         path_data=req.path_data,
     )
-    return SaveResponse(route_id=route.route_id, path=route.path_data)
+    return SaveResponse(route_id=route.route_id, path=route.path_data).model_dump(
+        by_alias=True
+    )
 
 
 # 이동 후 평가 (별점 등록)
