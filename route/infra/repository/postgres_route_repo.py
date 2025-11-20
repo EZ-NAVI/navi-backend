@@ -7,19 +7,38 @@ from database import SessionLocal
 class PostgresRouteRepository(RouteRepository):
     def save(self, route: RouteVO) -> RouteVO:
         with SessionLocal() as db:
-            db_route = RouteDB(
-                route_id=route.route_id,
-                user_id=route.user_id,
-                origin_lat=route.origin_lat,
-                origin_lng=route.origin_lng,
-                dest_lat=route.dest_lat,
-                dest_lng=route.dest_lng,
-                path_data=route.path_data,
-                duration=route.duration,
-                evaluation=route.evaluation,
-                created_at=route.created_at,
+            db_route = (
+                db.query(RouteDB).filter(RouteDB.route_id == route.route_id).first()
             )
-            db.add(db_route)
+
+            if db_route:
+                # UPDATE
+                db_route.user_id = route.user_id
+                db_route.origin_lat = route.origin_lat
+                db_route.origin_lng = route.origin_lng
+                db_route.dest_lat = route.dest_lat
+                db_route.dest_lng = route.dest_lng
+                db_route.path_data = route.path_data
+                db_route.duration = route.duration
+                db_route.evaluation = route.evaluation
+                db_route.created_at = route.created_at
+
+            else:
+                # INSERT
+                db_route = RouteDB(
+                    route_id=route.route_id,
+                    user_id=route.user_id,
+                    origin_lat=route.origin_lat,
+                    origin_lng=route.origin_lng,
+                    dest_lat=route.dest_lat,
+                    dest_lng=route.dest_lng,
+                    path_data=route.path_data,
+                    duration=route.duration,
+                    evaluation=route.evaluation,
+                    created_at=route.created_at,
+                )
+                db.add(db_route)
+
             db.commit()
             db.refresh(db_route)
             return RouteVO.from_orm(db_route)
