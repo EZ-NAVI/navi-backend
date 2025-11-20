@@ -67,8 +67,9 @@ def save_route(
         duration=req.duration,
         path_data=req.path_data,
     )
-    return SaveResponse(route_id=route.route_id, path=route.path_data).model_dump(
-        by_alias=True
+    return SaveResponse(
+        routeId=route.route_id,
+        path=route.path_data,
     )
 
 
