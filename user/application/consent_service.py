@@ -37,3 +37,8 @@ class ConsentService:
 
             db.commit()
         return True
+
+    def delete_user_consent(self, user_id: str):
+        with SessionLocal() as db:
+            db.query(UserConsent).filter(UserConsent.user_id == user_id).delete()
+            db.commit()

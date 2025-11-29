@@ -93,3 +93,20 @@ class PostgresUserRepository(UserRepository):
                 .first()
             )
             return UserVO.model_validate(child) if child else None
+
+    def delete(self, user_id: str) -> bool:
+        with SessionLocal() as db:
+            user = db.query(UserDB).filter(UserDB.user_id == user_id).first()
+            if not user:
+                return False
+            db.delete(user)
+            db.commit()
+            return True
+
+    def clear_parent_relation(self, user_id: str):
+        with SessionLocal() as db:
+            # 부모가 삭제되는 경우 → 자녀의 parent_id null
+            db.query(UserDB).filter(UserDB.parent_id == user_id).update(
+                {UserDB.parent_id: None}
+            )
+            db.commit()
