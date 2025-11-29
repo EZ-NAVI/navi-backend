@@ -124,3 +124,13 @@ def get_current_user_info(
 
     logger.info(f"현재 유저 정보 반환 uid={user.user_id}")
     return UserResponse(**user.dict(by_alias=True), matched=matched)
+
+
+@router.delete("/", response_model=MessageResponse)
+@inject
+def delete_current_user(
+    current: CurrentUser = Depends(get_current_user),
+    service: UserService = Depends(Provide[Container.user_service]),
+):
+    service.delete_user(current.user_id)
+    return {"message": "User deleted successfully"}
