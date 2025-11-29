@@ -93,3 +93,12 @@ class PostgresUserRepository(UserRepository):
                 .first()
             )
             return UserVO.model_validate(child) if child else None
+
+    def delete(self, user_id: str) -> bool:
+        with SessionLocal() as db:
+            user = db.query(UserDB).filter(UserDB.user_id == user_id).first()
+            if not user:
+                return False
+            db.delete(user)
+            db.commit()
+            return True
