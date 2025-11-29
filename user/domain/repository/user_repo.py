@@ -24,3 +24,7 @@ class UserRepository(ABC):
     def find_children_by_parent_id(self, parent_id: str) -> list[User]:
         """parent_id로 자녀들 조회"""
         raise NotImplementedError
+
+    @abstractmethod
+    def delete(self, user_id: str) -> bool:
+        raise NotImplementedError
