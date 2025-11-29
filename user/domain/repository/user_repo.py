@@ -28,3 +28,7 @@ class UserRepository(ABC):
     @abstractmethod
     def delete(self, user_id: str) -> bool:
         raise NotImplementedError
+
+    @abstractmethod
+    def clear_parent_relation(self, user_id: str):
+        raise NotImplementedError
