@@ -133,3 +133,15 @@ class UserService:
         updated = self.repo.save(user)
         logger.info(f"FCM 토큰 등록 완료 uid={user_id}")
         return updated
+
+    def delete_user(self, user_id: str):
+        consent_service = ConsentService()
+        consent_service.delete_user_consent(user_id)
+
+        self.repo.clear_parent_relation(user_id)
+
+        result = self.repo.delete(user_id)
+        if not result:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        return True
