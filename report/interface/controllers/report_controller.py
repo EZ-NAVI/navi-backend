@@ -8,13 +8,12 @@ from config import get_settings
 from datetime import datetime
 from report.application.report_service import ReportService
 from report.domain.report import Report
-from common.auth import get_current_user, CurrentUser
+from common.auth import CurrentUser, get_current_user, get_optional_user
 from common.logger import logger
 
 router = APIRouter(
     prefix="/reports",
     tags=["reports"],
-    dependencies=[Depends(get_current_user)],
 )
 
 settings = get_settings()
@@ -129,7 +128,7 @@ async def create_report(
 def get_report(
     report_id: str,
     service: ReportService = Depends(Provide[Container.report_service]),
-    current: CurrentUser = Depends(get_current_user),
+    current: CurrentUser | None = Depends(get_optional_user),
 ):
     report = service.get_report(report_id, current.uid if current else None)
     if not report:

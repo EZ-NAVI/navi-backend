@@ -58,42 +58,45 @@ class CurrentUser:
     def __str__(self):
         return f"{self.uid}({self.role}, type={self.user_type})"
 
-    def get_current_user(
-        credentials: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
-    ):
-        token = credentials.credentials
-        payload = decode_access_token(token)
-        user_id = payload.get("user_id")
-        role = payload.get("role")
-        user_type = payload.get("user_type")
-        if not user_id or not role or role != Role.USER:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-        return CurrentUser(user_id, Role(role), user_type)
 
-    def get_admin_user(
-        credentials: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
-    ):
-        token = credentials.credentials
-        payload = decode_access_token(token)
-        role = payload.get("role")
-        if not role or role != Role.ADMIN:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
-        return CurrentUser("ADMIN_USER_ID", Role(role))
+def get_current_user(
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+):
+    token = credentials.credentials
+    payload = decode_access_token(token)
+    user_id = payload.get("user_id")
+    role = payload.get("role")
+    user_type = payload.get("user_type")
+    if not user_id or not role or role != Role.USER:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    return CurrentUser(user_id, Role(role), user_type)
 
-    async def get_optional_user(request: Request):
-        auth: str | None = request.headers.get("Authorization")
-        if not auth:
+
+def get_admin_user(
+    credentials: Annotated[HTTPAuthorizationCredentials, Depends(oauth2_scheme)],
+):
+    token = credentials.credentials
+    payload = decode_access_token(token)
+    role = payload.get("role")
+    if not role or role != Role.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+    return CurrentUser("ADMIN_USER_ID", Role(role))
+
+
+async def get_optional_user(request: Request):
+    auth: str | None = request.headers.get("Authorization")
+    if not auth:
+        return None
+
+    try:
+        scheme, token = auth.split()
+        if scheme.lower() != "bearer":
             return None
-
-        try:
-            scheme, token = auth.split()
-            if scheme.lower() != "bearer":
-                return None
-            payload = decode_access_token(token)
-            return CurrentUser(
-                payload.get("user_id"),
-                Role(payload.get("role")),
-                payload.get("user_type"),
-            )
-        except Exception:
-            return None
+        payload = decode_access_token(token)
+        return CurrentUser(
+            payload.get("user_id"),
+            Role(payload.get("role")),
+            payload.get("user_type"),
+        )
+    except Exception:
+        return None
