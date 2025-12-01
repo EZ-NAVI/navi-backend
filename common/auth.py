@@ -81,3 +81,22 @@ def get_admin_user(
     if not role or role != Role.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
     return CurrentUser("ADMIN_USER_ID", Role(role))
+
+
+async def get_optional_user(request: Request):
+    auth: str | None = request.headers.get("Authorization")
+    if not auth:
+        return None
+
+    try:
+        scheme, token = auth.split()
+        if scheme.lower() != "bearer":
+            return None
+        payload = decode_access_token(token)
+        return CurrentUser(
+            payload.get("user_id"),
+            Role(payload.get("role")),
+            payload.get("user_type"),
+        )
+    except Exception:
+        return None
