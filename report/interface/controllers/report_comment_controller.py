@@ -5,14 +5,13 @@ from typing import List
 from containers import Container
 from report.application.report_comment_service import ReportCommentService
 from report.domain.report_comment import ReportComment
-from common.auth import get_current_user, CurrentUser
+from common.auth import CurrentUser, get_current_user, get_optional_user
 from common.logger import logger
 
 
 router = APIRouter(
     prefix="/reports/{report_id}/comments",
     tags=["report-comments"],
-    dependencies=[Depends(get_current_user)],
 )
 
 
