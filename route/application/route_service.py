@@ -64,13 +64,15 @@ class RouteService:
 
         # LineString 좌표 추출 (기본 경로)
         base_lines = []
+
         for f in features:
             geom = f.get("geometry")
-            if geom and geom.get("type") == "LineString":
-                coords = geom["coordinates"]
-                # [lon, lat] → (lat, lon)
-                line = [(c[1], c[0]) for c in coords]
-                base_lines.append(line)
+            if not geom or geom.get("type") != "LineString":
+                continue
+
+            coords = geom["coordinates"]
+            line = [(c[1], c[0]) for c in coords]
+            base_lines.append(line)
 
         # 위험구역이 없으면 기본 경로 반환
         if not hazards:
@@ -87,8 +89,8 @@ class RouteService:
         graph = build_graph(base_lines, hazard_objs)
 
         # A* 기반 위험 회피 경로 생성
-        start = snap_to_nearest_node(graph, (origin_lat, origin_lng))
-        end = snap_to_nearest_node(graph, (dest_lat, dest_lng))
+        start = snap_to_nearest_node(graph, (origin_lat, origin_lng), hazard_objs)
+        end = snap_to_nearest_node(graph, (dest_lat, dest_lng), hazard_objs)
         safe_path = astar_graph(graph, start, end)
 
         return safe_path

@@ -50,11 +50,27 @@ def haversine(lat1, lon1, lat2, lon2):
     return 2 * R * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
-def snap_to_nearest_node(graph, point):
+def snap_to_nearest_node(graph, point, hazards: List[Hazard] = None):
     """그래프의 노드 중 point와 가장 가까운 노드를 반환"""
     if not graph:
         return point
+
     nodes = list(graph.keys())
+
+    if hazards:
+        safe_nodes = []
+        for n in nodes:
+            unsafe = False
+            for hz in hazards:
+                if haversine(n[0], n[1], hz.lat, hz.lon) < hz.radius:
+                    unsafe = True
+                    break
+            if not unsafe:
+                safe_nodes.append(n)
+
+        if safe_nodes:
+            nodes = safe_nodes
+
     nearest = min(nodes, key=lambda n: haversine(point[0], point[1], n[0], n[1]))
     return nearest
 
@@ -94,15 +110,27 @@ def build_graph(lines: List[List[Tuple[float, float]]], hazards: List[Hazard]):
         for i in range(len(line) - 1):
             p1 = line[i]
             p2 = line[i + 1]
-            dist = haversine(p1[0], p1[1], p2[0], p2[1])
-            weight = dist  # 기본 거리 기반 가중치
 
-            # 위험 구역과 교차하면 페널티 부여
+            dist = haversine(p1[0], p1[1], p2[0], p2[1])
+            weight = dist
+
+            blocked = False  # ← 핵심
+
             for hz in hazards:
                 if segment_circle_intersect(p1, p2, (hz.lat, hz.lon), hz.radius):
-                    weight += hz.score * 300  # 위험도 높은 세그먼트는 회피
+                    # 점수 높은 제보 → 아예 사용 금지
+                    if hz.score >= 0.7:
+                        blocked = True
+                        break
+                    # 애매한 제보 → 페널티만
+                    else:
+                        weight += hz.score * 200
 
-            # 양방향 그래프 구성
+            # ❌ 위험하면 이 세그먼트 자체를 그래프에 안 넣음
+            if blocked:
+                continue
+
+            # 양방향 그래프
             graph.setdefault(p1, []).append((p2, weight))
             graph.setdefault(p2, []).append((p1, weight))
 
